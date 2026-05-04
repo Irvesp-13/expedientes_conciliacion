@@ -1,0 +1,397 @@
+{% extends 'base.html' %}
+
+{% block title %}Agregar Expediente{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card mt-2 shadow">
+            <div class="card-header text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Regresar
+                    </a>
+                    <h3 class="card-title mb-0">Agregar Expediente</h3>
+                    <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
+                </div>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <h5 class="mb-3 text-primary">Datos Generales</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="expediente">Expediente: <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="expediente" name="expediente"
+                                pattern="\d+/\d+/\d+" title="Formato requerido: X/X/X (ejemplo: 8/8/8)" required>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="junta">Junta:</label>
+                            <input type="text" class="form-control" id="junta" name="junta">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="tomo">Tomo:</label>
+                            <input type="number" class="form-control" id="tomo" name="tomo">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="reviso_capturo">Revisó/Capturó:</label>
+                            <input type="text" class="form-control" id="reviso_capturo" name="reviso_capturo">
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Actor y Demandado</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="actor_nombre">Nombre del Actor:</label>
+                            <input type="text" class="form-control" id="actor_nombre" name="actor_nombre">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="demandado_nombre">Nombre del Demandado:</label>
+                            <input type="text" class="form-control" id="demandado_nombre" name="demandado_nombre">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="mujer_numero" name="mujer_numero" value="1">
+                                <label class="form-check-label" for="mujer_numero">Actor Mujer</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="hombre_numero" name="hombre_numero" value="1">
+                                <label class="form-check-label" for="hombre_numero">Actor Hombre</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="mujer_numero_0" name="mujer_numero_0" value="1">
+                                <label class="form-check-label" for="mujer_numero_0">Demandado Mujer</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="hombre_numero_0" name="hombre_numero_0" value="1">
+                                <label class="form-check-label" for="hombre_numero_0">Demandado Hombre</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Tipo de Demandado</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="persona_moral_numero" name="persona_moral_numero" value="1">
+                                <label class="form-check-label" for="persona_moral_numero">Persona Moral</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="iebem" name="iebem" value="1">
+                                <label class="form-check-label" for="iebem">IEBEM</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="servicios_salud" name="servicios_salud" value="1">
+                                <label class="form-check-label" for="servicios_salud">Servicios Salud</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="poder_ejecutivo" name="poder_ejecutivo" value="1">
+                                <label class="form-check-label" for="poder_ejecutivo">Poder Ejecutivo</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="ayuntamientos" name="ayuntamientos" value="1">
+                                <label class="form-check-label" for="ayuntamientos">Ayuntamientos</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="otros_organismos" name="otros_organismos" value="1">
+                                <label class="form-check-label" for="otros_organismos">Otros Organismos</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Notificaciones y Emplazamientos</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="no_se_ha_notificado_a_las_partes" name="no_se_ha_notificado_a_las_partes" value="1">
+                                <label class="form-check-label" for="no_se_ha_notificado_a_las_partes">No se ha notificado a las partes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="empl_no_realizado" name="empl_no_realizado" value="1">
+                                <label class="form-check-label" for="empl_no_realizado">Empl. no realizado</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="empl_exhorto" name="empl_exhorto" value="1">
+                                <label class="form-check-label" for="empl_exhorto">Empl. exhorto</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Exhortos</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="exhortos_sin_enviar" name="exhortos_sin_enviar" value="1">
+                                <label class="form-check-label" for="exhortos_sin_enviar">Exhortos sin enviar</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="exhortos_cdmx" name="exhortos_cdmx" value="1">
+                                <label class="form-check-label" for="exhortos_cdmx">Exhortos CDMX</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="exhortos_foraneos" name="exhortos_foraneos" value="1">
+                                <label class="form-check-label" for="exhortos_foraneos">Exhortos Foráneos</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Partes del Proceso</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cde" name="cde" value="1">
+                                <label class="form-check-label" for="cde">C.D.E.</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="tercero_llamado_a_juicio" name="tercero_llamado_a_juicio" value="1">
+                                <label class="form-check-label" for="tercero_llamado_a_juicio">Tercero llamado a juicio</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="oap" name="oap" value="1">
+                                <label class="form-check-label" for="oap">O.A.P.</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="desahogo_pruebas" name="desahogo_pruebas" value="1">
+                                <label class="form-check-label" for="desahogo_pruebas">Desahogo pruebas</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="sustitucion_patronal" name="sustitucion_patronal" value="1">
+                                <label class="form-check-label" for="sustitucion_patronal">Sustitución Patronal</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Pruebas</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="test_falta_citar" name="test_falta_citar" value="1">
+                                <label class="form-check-label" for="test_falta_citar">Testimonial falta citar</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="periciales_partes" name="periciales_partes" value="1">
+                                <label class="form-check-label" for="periciales_partes">Periciales partes</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="pericial_tercero" name="pericial_tercero" value="1">
+                                <label class="form-check-label" for="pericial_tercero">Periciales</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="inf_falta_hacer" name="inf_falta_hacer" value="1">
+                                <label class="form-check-label" for="inf_falta_hacer">Informe falta hacer</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="inf_falta_desahogar" name="inf_falta_desahogar" value="1">
+                                <label class="form-check-label" for="inf_falta_desahogar">Informe falta desahogar</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="otras_pruebas" name="otras_pruebas" value="1">
+                                <label class="form-check-label" for="otras_pruebas">Otras pruebas</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="prueba_pendiente" name="prueba_pendiente" value="1">
+                                <label class="form-check-label" for="prueba_pendiente">Prueba pendiente</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="alegatos" name="alegatos" value="1">
+                                <label class="form-check-label" for="alegatos">Alegatos</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Cierre y Resolución</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="cierre" name="cierre" value="1">
+                                <label class="form-check-label" for="cierre">Cierre</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="laudo_dictado" name="laudo_dictado" value="1">
+                                <label class="form-check-label" for="laudo_dictado">Laudo dictado</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="absolutorio" name="absolutorio" value="1">
+                                <label class="form-check-label" for="absolutorio">Absolutorio</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="condenatorio" name="condenatorio" value="1">
+                                <label class="form-check-label" for="condenatorio">Condenatorio</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="monto">Monto de condena:</label>
+                            <input type="text" class="form-control" id="monto" name="monto">
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Ejecución</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="auto_ejecucion" name="auto_ejecucion" value="1">
+                                <label class="form-check-label" for="auto_ejecucion">Auto ejecución</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="terceria" name="terceria" value="1">
+                                <label class="form-check-label" for="terceria">Tercería</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="recurso_revision" name="recurso_revision" value="1">
+                                <label class="form-check-label" for="recurso_revision">Recurso revisión</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="remate" name="remate" value="1">
+                                <label class="form-check-label" for="remate">Remate</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Inactividad</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="inactividad_1_anio" name="inactividad_1_anio" value="1">
+                                <label class="form-check-label" for="inactividad_1_anio">Inactividad 1 año</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="inactividad_2_anios_mas" name="inactividad_2_anios_mas" value="1">
+                                <label class="form-check-label" for="inactividad_2_anios_mas">Inactividad 2 años o +</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Amparos</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="amparo_indirecto" name="amparo_indirecto" value="1">
+                                <label class="form-check-label" for="amparo_indirecto">Amparo indirecto</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="amparo_directo_cumpl" name="amparo_directo_cumpl" value="1">
+                                <label class="form-check-label" for="amparo_directo_cumpl">Amp. directo cumpl.</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mt-4 mb-3 text-primary">Otros</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="no_interpuesta" name="no_interpuesta" value="1">
+                                <label class="form-check-label" for="no_interpuesta">No interpuesta</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="prescripcion" name="prescripcion" value="1">
+                                <label class="form-check-label" for="prescripcion">Prescripción</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="depuracion" name="depuracion" value="1">
+                                <label class="form-check-label" for="depuracion">Depuración</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="regularizar" name="regularizar" value="1">
+                                <label class="form-check-label" for="regularizar">Regularizar</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-agregar">
+                            <i class="fas fa-save"></i> Guardar
+                        </button>
+                        <a href="{% url 'bienvenida' %}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

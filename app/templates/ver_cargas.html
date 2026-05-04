@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block title %}Ver Cargas{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card mt-5 shadow">
+            <div class="card-header text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Regresar
+                    </a>
+                    <h3 class="card-title mb-0">Tabla de Carga y Descarga</h3>
+                    <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Add search bar -->
+                <div class="row mb-4">
+                    <div class="col-md-6 offset-md-6">
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control"
+                                placeholder="Buscar por Empleado o Expediente...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Empleado</th>
+                                <th>Expediente</th>
+                                <th>Fecha</th>
+                                <th>Entregado a</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for carga in cargas %}
+                            <tr class="carga-row">
+                                <td>{{ carga.id }}</td>
+                                <td>{{ carga.empleado.nombre }}</td>
+                                <td>{{ carga.expediente.expediente }}</td>
+                                <td>{{ carga.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>{{ carga.nombre_carga }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        let searchText = this.value.toLowerCase();
+        let rows = document.getElementsByClassName('carga-row');
+
+        for (let row of rows) {
+            let empleado = row.cells[1].textContent.toLowerCase();
+            let expediente = row.cells[2].textContent.toLowerCase();
+
+            if (empleado.includes(searchText) || expediente.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+</script>
+{% endblock %}

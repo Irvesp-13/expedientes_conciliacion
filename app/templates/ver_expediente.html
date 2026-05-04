@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Detalles del Expediente{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Detalles del Expediente: {{ expediente.expediente }}</h2>
+        <div>
+            <a href="{% url 'editar_expediente' expediente.id_expediente %}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <a href="{% url 'bienvenida' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Información General -->
+            <h5 class="card-title border-bottom pb-2 mb-3">Información General</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Expediente:</strong><br>
+                    {{ expediente.expediente|default:'' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Junta:</strong><br>
+                    {{ expediente.junta|default:'' }}
+                </div>
+                <div class="col-md-4">
+                    <strong>Tomo:</strong><br>
+                    {{ expediente.tomo|default:'' }}
+                </div>
+            </div>
+
+            <!-- Partes -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Partes</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Actor (Nombre):</strong><br>
+                    {{ expediente.actor_nombre|default:'' }}
+                </div>
+                <div class="col-md-6">
+                    <strong>Demandado (Nombre):</strong><br>
+                    {{ expediente.demandado_nombre|default:'' }}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>Actor - Mujer:</strong><br>
+                    <i class="bi bi-{% if expediente.mujer_numero %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.mujer_numero %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Actor - Hombre:</strong><br>
+                    <i class="bi bi-{% if expediente.hombre_numero %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.hombre_numero %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Demandado - Mujer:</strong><br>
+                    <i class="bi bi-{% if expediente.mujer_numero_0 %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.mujer_numero_0 %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Demandado - Hombre:</strong><br>
+                    <i class="bi bi-{% if expediente.hombre_numero_0 %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.hombre_numero_0 %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Persona Moral:</strong><br>
+                    <i class="bi bi-{% if expediente.persona_moral_numero %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.persona_moral_numero %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Patrones/Demandados -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Patrones/Demandados</h5>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>IEBEM:</strong><br>
+                    <i class="bi bi-{% if expediente.iebem %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.iebem %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Servicios Salud:</strong><br>
+                    <i class="bi bi-{% if expediente.servicios_salud %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.servicios_salud %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Poder Ejecutivo:</strong><br>
+                    <i class="bi bi-{% if expediente.poder_ejecutivo %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.poder_ejecutivo %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Ayuntamientos:</strong><br>
+                    <i class="bi bi-{% if expediente.ayuntamientos %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.ayuntamientos %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <strong>C.D.E.:</strong><br>
+                    <i class="bi bi-{% if expediente.cde %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.cde %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-3">
+                    <strong>Otros Organismos:</strong><br>
+                    <i class="bi bi-{% if expediente.otros_organismos %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.otros_organismos %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Notificaciones y Emplazamientos -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Notificaciones y Emplazamientos</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>No se ha notificado a las partes:</strong><br>
+                    <i class="bi bi-{% if expediente.no_se_ha_notificado_a_las_partes %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.no_se_ha_notificado_a_las_partes %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Empl. no realizado:</strong><br>
+                    <i class="bi bi-{% if expediente.empl_no_realizado %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.empl_no_realizado %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Empl. exhorto:</strong><br>
+                    <i class="bi bi-{% if expediente.empl_exhorto %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.empl_exhorto %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Exhortos -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Exhortos</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Exhortos sin enviar:</strong><br>
+                    <i class="bi bi-{% if expediente.exhortos_sin_enviar %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.exhortos_sin_enviar %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Exhortos CDMX:</strong><br>
+                    <i class="bi bi-{% if expediente.exhortos_cdmx %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.exhortos_cdmx %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Exhortos Foráneos:</strong><br>
+                    <i class="bi bi-{% if expediente.exhortos_foraneos %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.exhortos_foraneos %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Incidentes -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Incidentes</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Tercero llamado a juicio:</strong><br>
+                    <i class="bi bi-{% if expediente.tercero_llamado_a_juicio %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.tercero_llamado_a_juicio %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>O.A.P.:</strong><br>
+                    <i class="bi bi-{% if expediente.oap %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.oap %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Etapa Probatoria -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Etapa Probatoria</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Desahogo Pruebas:</strong><br>
+                    <i class="bi bi-{% if expediente.desahogo_pruebas %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.desahogo_pruebas %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Testimonial falta citar:</strong><br>
+                    <i class="bi bi-{% if expediente.test_falta_citar %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.test_falta_citar %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Periciales Partes:</strong><br>
+                    <i class="bi bi-{% if expediente.periciales_partes %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.periciales_partes %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Periciales:</strong><br>
+                    <i class="bi bi-{% if expediente.pericial_tercero %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.pericial_tercero %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Informe falta hacer:</strong><br>
+                    <i class="bi bi-{% if expediente.inf_falta_hacer %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.inf_falta_hacer %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Informe falta desahogar:</strong><br>
+                    <i class="bi bi-{% if expediente.inf_falta_desahogar %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.inf_falta_desahogar %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Otras pruebas:</strong><br>
+                    <i class="bi bi-{% if expediente.otras_pruebas %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.otras_pruebas %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Alegatos:</strong><br>
+                    <i class="bi bi-{% if expediente.alegatos %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.alegatos %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Prueba pendiente:</strong><br>
+                    <i class="bi bi-{% if expediente.prueba_pendiente %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.prueba_pendiente %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Resolución -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Resolución</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Cierre:</strong><br>
+                    <i class="bi bi-{% if expediente.cierre %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.cierre %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Laudo Dictado:</strong><br>
+                    <i class="bi bi-{% if expediente.laudo_dictado %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.laudo_dictado %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Absolutorio:</strong><br>
+                    <i class="bi bi-{% if expediente.absolutorio %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.absolutorio %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Condenatorio:</strong><br>
+                    <i class="bi bi-{% if expediente.condenatorio %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.condenatorio %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Monto de Condena:</strong><br>
+                    {{ expediente.monto|default:'' }}
+                </div>
+            </div>
+
+            <!-- Ejecución -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Ejecución</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Auto Ejecución:</strong><br>
+                    <i class="bi bi-{% if expediente.auto_ejecucion %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.auto_ejecucion %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Tercería:</strong><br>
+                    <i class="bi bi-{% if expediente.terceria %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.terceria %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Recurso Revisión:</strong><br>
+                    <i class="bi bi-{% if expediente.recurso_revision %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.recurso_revision %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Remate:</strong><br>
+                    <i class="bi bi-{% if expediente.remate %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.remate %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Inactividad -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Inactividad</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Inactividad 1 año:</strong><br>
+                    <i class="bi bi-{% if expediente.inactividad_1_anio %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.inactividad_1_anio %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Inactividad 2 años o +:</strong><br>
+                    <i class="bi bi-{% if expediente.inactividad_2_anios_mas %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.inactividad_2_anios_mas %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Amparos -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Amparos</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Amparo Indirecto:</strong><br>
+                    <i class="bi bi-{% if expediente.amparo_indirecto %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.amparo_indirecto %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Amp. Directo Cumpl.:</strong><br>
+                    <i class="bi bi-{% if expediente.amparo_directo_cumpl %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.amparo_directo_cumpl %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Otros -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Otros</h5>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Sustitución Patronal:</strong><br>
+                    <i class="bi bi-{% if expediente.sustitucion_patronal %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.sustitucion_patronal %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>No Interpuesta:</strong><br>
+                    <i class="bi bi-{% if expediente.no_interpuesta %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.no_interpuesta %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Prescripción:</strong><br>
+                    <i class="bi bi-{% if expediente.prescripcion %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.prescripcion %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <strong>Depuración:</strong><br>
+                    <i class="bi bi-{% if expediente.depuracion %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.depuracion %}Sí{% else %}No{% endif %}
+                </div>
+                <div class="col-md-4">
+                    <strong>Regularizar:</strong><br>
+                    <i class="bi bi-{% if expediente.regularizar %}check-circle-fill text-success{% else %}x-circle text-muted{% endif %}"></i>
+                    {% if expediente.regularizar %}Sí{% else %}No{% endif %}
+                </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <h5 class="card-title border-bottom pb-2 mb-3 mt-4">Información Adicional</h5>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <strong>Revisó/Capturó:</strong><br>
+                    {{ expediente.reviso_capturo|default:'' }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Empleado{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{% url 'crear_empleado' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left"></i> Regresar
+        </a>
+        <h2 class="mb-0">Editar Empleado</h2>
+        <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
+    </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="nombre" class="form-label">Nombre:</label>
+            <input type="text" class="form-control" id="nombre" name="nombre" value="{{ empleado.nombre }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="clave_empleado" class="form-label">Clave de Empleado:</label>
+            <input type="text" class="form-control" id="clave_empleado" name="clave_empleado" value="{{ empleado.clave_empleado }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="puesto" class="form-label">Puesto:</label>
+            <select class="form-control" id="puesto" name="puesto" required>
+                <option value="1" {% if empleado.puesto == 1 %}selected{% endif %}>Administrador</option>
+                <option value="2" {% if empleado.puesto == 2 %}selected{% endif %}>Usuario normal</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar Cambios
+        </button>
+        <a href="{% url 'crear_empleado' %}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

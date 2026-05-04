@@ -1,0 +1,481 @@
+{% extends 'base.html' %}
+
+{% block title %}Bienvenida{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card mt-5 shadow">
+            <div class="card-header text-white">
+                <h3 class="card-title">Tabla de Expedientes</h3>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <!-- Search bar -->
+                    <div class="col-md-12">
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control"
+                                placeholder="Buscar por Actor, Demandado, Expediente o Junta...">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()" title="Limpiar búsqueda">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabla de expedientes -->
+<div class="table-responsive" style="max-height: 530px; overflow-y: auto;">
+    <table class="table table-bordered table-striped table-hover" id="expedientesTable">
+        <thead style="position: sticky; top: 0; background-color: #315527; z-index: 1;">
+            <tr>
+                <th style="width: 18%;">Expediente</th>
+                <th style="width: 18%;">Junta</th>
+                <th style="width: 22%;">Actor</th>
+                <th style="width: 22%;">Demandado</th>
+                <th style="width: 20%;">ACCIONES</th>
+            </tr>
+        </thead>
+                        <tbody>
+                            {% for expediente in expedientes %}
+                            <tr class="expediente-row" style="cursor: pointer;" onclick="window.location.href='{% url 'ver_expediente' expediente.id_expediente %}'">
+                                <td>{{ expediente.expediente }}</td>
+                                <td>{{ expediente.junta }}</td>
+                                <td>{{ expediente.actor_nombre }}</td>
+                                <td>{{ expediente.demandado_nombre }}</td>
+                                <td style="white-space: nowrap;" onclick="event.stopPropagation();">
+                                    <a href="{% url 'ver_expediente' expediente.id_expediente %}"
+                                        class="btn btn-info btn-sm me-2">
+                                        <i class="fas fa-eye"></i> Ver
+                                    </a>
+                                    <a href="{% url 'editar_expediente' expediente.id_expediente %}"
+                                        class="btn btn-agregar btn-sm me-2">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                    <button class="btn btn-agregar btn-sm"
+                                        onclick="abrirModalCarga('{{ expediente.id_expediente }}', '{{ expediente.expediente }}')">
+                                        <i class="fas fa-file-upload"></i> Cargar
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Carga -->
+<div class="modal fade" id="modalCarga" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Cargar Expediente</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formCarga">
+                    {% csrf_token %}
+                    <input type="hidden" id="expediente_id" name="expediente_id">
+                    <div class="mb-3">
+                        <label>Empleado:</label>
+                        <input type="text" class="form-control" value="{{ empleado.nombre }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label>Expediente:</label>
+                        <input type="text" id="numero_expediente" class="form-control" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label>Fecha:</label>
+                        <input type="text" class="form-control" value="{% now 'Y-m-d H:i' %}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label>Nombre de quien recibe:</label>
+                        <input type="text" class="form-control" name="nombre_carga" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalCarga()">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarCarga()">Cargar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Archivo -->
+<div class="modal fade" id="modalArchivo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Archivar Expedientes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formArchivo">
+                    {% csrf_token %}
+
+                    <!-- Buscador de expedientes -->
+                    <div class="mb-3">
+                        <label class="form-label">Buscar expedientes:</label>
+                        <input type="text" id="searchExpedientesArchivo" class="form-control"
+                            placeholder="Buscar por Expediente, Junta, Actor o Demandado...">
+                    </div>
+
+                    <!-- Botones de selección -->
+                    <div class="mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="seleccionarTodos()">
+                            Seleccionar Todos
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deseleccionarTodos()">
+                            Deseleccionar Todos
+                        </button>
+                        <span id="contadorSeleccionados" class="ms-3 text-muted">0 expedientes seleccionados</span>
+                    </div>
+
+                    <!-- Lista de expedientes -->
+                    <div class="mb-3">
+                        <label class="form-label">Expedientes disponibles:</label>
+                        <div id="listaExpedientes" class="border rounded p-3"
+                            style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted">
+                                <div class="spinner-border spinner-border-sm" role="status"></div>
+                                Cargando expedientes...
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fecha:</label>
+                        <input type="text" class="form-control" value="{% now 'Y-m-d H:i' %}" readonly>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del archivo:</label>
+                        <textarea class="form-control" name="motivo" required rows="3"
+                            placeholder="Ingrese el motivo por el cual se están archivando los expedientes..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalArchivo()">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="archivarExpedientesSeleccionados()"
+                    id="btnArchivar" disabled>
+                    Archivar Expedientes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let myModal;
+    let modalArchivo;
+    let expedientesData = [];
+    let expedientesSeleccionados = [];
+
+    function abrirModalCarga(id, numero) {
+        document.getElementById('expediente_id').value = id;
+        document.getElementById('numero_expediente').value = numero;
+        myModal = new bootstrap.Modal(document.getElementById('modalCarga'));
+        myModal.show();
+    }
+
+    function guardarCarga() {
+        const form = document.getElementById('formCarga');
+        const formData = new FormData(form);
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('{% url "cargar_expediente" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken
+            },
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Carga registrada correctamente');
+                    cerrarModalCarga();
+                    location.reload();
+                } else {
+                    alert('Error al registrar la carga: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar la solicitud');
+            });
+    }
+
+    function cerrarModalCarga() {
+        if (myModal) {
+            myModal.hide();
+        }
+        // Limpiar el formulario
+        document.getElementById('formCarga').reset();
+        document.getElementById('expediente_id').value = '';
+        document.getElementById('numero_expediente').value = '';
+    }
+
+    // Funciones para el modal de archivo múltiple
+    function abrirModalArchivoMultiple() {
+        modalArchivo = new bootstrap.Modal(document.getElementById('modalArchivo'));
+        modalArchivo.show();
+        cargarExpedientes();
+        // Limpiar datos previos
+        expedientesSeleccionados = [];
+        actualizarContador();
+        document.querySelector('textarea[name="motivo"]').value = '';
+        document.getElementById('searchExpedientesArchivo').value = '';
+    }
+
+    function cerrarModalArchivo() {
+        if (modalArchivo) {
+            modalArchivo.hide();
+        }
+        // Limpiar datos
+        expedientesSeleccionados = [];
+        expedientesData = [];
+        document.getElementById('formArchivo').reset();
+        document.getElementById('listaExpedientes').innerHTML = '';
+        document.getElementById('contadorSeleccionados').textContent = '0 expedientes seleccionados';
+        document.getElementById('btnArchivar').disabled = true;
+    }
+
+    function cargarExpedientes() {
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        fetch('{% url "obtener_expedientes_ajax" %}', {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    expedientesData = data.expedientes;
+                    mostrarExpedientes(expedientesData);
+                } else {
+                    document.getElementById('listaExpedientes').innerHTML =
+                        '<div class="alert alert-danger">Error al cargar expedientes: ' + data.error + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('listaExpedientes').innerHTML =
+                    '<div class="alert alert-danger">Error al cargar expedientes</div>';
+            });
+    }
+
+    function mostrarExpedientes(expedientes) {
+        const lista = document.getElementById('listaExpedientes');
+
+        if (expedientes.length === 0) {
+            lista.innerHTML = '<div class="text-muted">No se encontraron expedientes</div>';
+            return;
+        }
+
+        let html = '';
+        expedientes.forEach(exp => {
+            html += `
+                <div class="form-check mb-2 expediente-item">
+                    <input class="form-check-input" type="checkbox" value="${exp.id_expediente}" 
+                           id="exp_${exp.id_expediente}" onchange="actualizarSeleccion()">
+                    <label class="form-check-label w-100" for="exp_${exp.id_expediente}">
+                        <div class="row">
+                            <div class="col-md-3"><strong>${exp.expediente}</strong></div>
+                            <div class="col-md-2">${exp.junta}</div>
+                            <div class="col-md-3">${exp.actor_nombre}</div>
+                            <div class="col-md-4">${exp.demandado_nombre}</div>
+                        </div>
+                    </label>
+                </div>
+            `;
+        });
+
+        lista.innerHTML = html;
+    }
+
+    function filtrarExpedientes() {
+        const filtro = document.getElementById('searchExpedientesArchivo').value.toLowerCase();
+        const expedientesFiltrados = expedientesData.filter(exp =>
+            exp.expediente.toLowerCase().includes(filtro) ||
+            exp.junta.toLowerCase().includes(filtro) ||
+            exp.actor_nombre.toLowerCase().includes(filtro) ||
+            exp.demandado_nombre.toLowerCase().includes(filtro)
+        );
+        mostrarExpedientes(expedientesFiltrados);
+
+        // Mantener selecciones después del filtro
+        expedientesSeleccionados.forEach(id => {
+            const checkbox = document.getElementById(`exp_${id}`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+    }
+
+    function seleccionarTodos() {
+        const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = true;
+            if (!expedientesSeleccionados.includes(checkbox.value)) {
+                expedientesSeleccionados.push(checkbox.value);
+            }
+        });
+        actualizarContador();
+    }
+
+    function deseleccionarTodos() {
+        const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+        expedientesSeleccionados = [];
+        actualizarContador();
+    }
+
+    function actualizarSeleccion() {
+        expedientesSeleccionados = [];
+        const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]:checked');
+        checkboxes.forEach(checkbox => {
+            expedientesSeleccionados.push(checkbox.value);
+        });
+        actualizarContador();
+    }
+
+    function actualizarContador() {
+        const contador = document.getElementById('contadorSeleccionados');
+        const btnArchivar = document.getElementById('btnArchivar');
+
+        contador.textContent = `${expedientesSeleccionados.length} expedientes seleccionados`;
+        btnArchivar.disabled = expedientesSeleccionados.length === 0;
+    }
+
+    function archivarExpedientesSeleccionados() {
+        if (expedientesSeleccionados.length === 0) {
+            alert('Por favor, selecciona al menos un expediente para archivar');
+            return;
+        }
+
+        const motivo = document.querySelector('textarea[name="motivo"]').value;
+        if (!motivo.trim()) {
+            alert('Por favor, ingresa el motivo del archivo');
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de que deseas archivar ${expedientesSeleccionados.length} expediente(s)?`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        expedientesSeleccionados.forEach(id => {
+            formData.append('expedientes_ids[]', id);
+        });
+        formData.append('motivo', motivo);
+
+        // Deshabilitar botón mientras se procesa
+        const btnArchivar = document.getElementById('btnArchivar');
+        btnArchivar.disabled = true;
+        btnArchivar.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Archivando...';
+
+        fetch('{% url "archivar_expediente" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: formData
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message || 'Expedientes archivados correctamente');
+                    cerrarModalArchivo();
+                    location.reload();
+                } else {
+                    alert('Error al archivar expedientes: ' + (data.error || 'Error desconocido'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al procesar la solicitud. Por favor, inténtelo de nuevo.');
+            })
+            .finally(() => {
+                btnArchivar.disabled = false;
+                btnArchivar.innerHTML = 'Archivar Expedientes';
+            });
+    }
+
+    // Event listener para el buscador
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('searchExpedientesArchivo');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', filtrarExpedientes);
+        }
+
+        // Event listeners para cerrar modales
+        const modalCargaElement = document.getElementById('modalCarga');
+        const modalArchivoElement = document.getElementById('modalArchivo');
+
+        if (modalCargaElement) {
+            modalCargaElement.addEventListener('hidden.bs.modal', function () {
+                cerrarModalCarga();
+            });
+        }
+
+        if (modalArchivoElement) {
+            modalArchivoElement.addEventListener('hidden.bs.modal', function () {
+                cerrarModalArchivo();
+            });
+        }
+    });
+
+    // Función de búsqueda para la tabla principal
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        let searchText = this.value.toLowerCase();
+        let rows = document.getElementsByClassName('expediente-row');
+
+        for (let row of rows) {
+            let expediente = row.cells[1].textContent.toLowerCase();
+            let junta = row.cells[2].textContent.toLowerCase();
+            let actor = row.cells[3].textContent.toLowerCase();
+            let demandado = row.cells[4].textContent.toLowerCase();
+
+            if (expediente.includes(searchText) ||
+                junta.includes(searchText) ||
+                actor.includes(searchText) ||
+                demandado.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+
+    // Función para limpiar el campo de búsqueda
+    function limpiarBusqueda() {
+        const searchInput = document.getElementById('searchInput');
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('keyup'));
+        searchInput.focus();
+    }
+
+</script>
+{% endblock %}

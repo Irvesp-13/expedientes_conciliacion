@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: conciliacion_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-conciliacion}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+    ports:
+      - "3307:3306"  # Puerto 3307 en el host para evitar conflictos con MySQL local
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backups:/backups  # Para importar/exportar datos
+    networks:
+      - conciliacion_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: conciliacion_web
+    restart: always
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 expedientes_conciliacion.wsgi:application"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_ENGINE=django.db.backends.mysql
+      - DB_NAME=${DB_NAME:-conciliacion}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD:-root}
+      - DB_HOST=db
+      - DB_PORT=3306
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-p)i#yc*xf(14ps=eju=b*lboeu8$$g3(%utn=-lw61b#r$5%!&c}
+      - DEBUG=${DEBUG:-False}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - conciliacion_network
+
+volumes:
+  mysql_data:
+    driver: local
+  static_volume:
+    driver: local
+
+networks:
+  conciliacion_network:
+    driver: bridge

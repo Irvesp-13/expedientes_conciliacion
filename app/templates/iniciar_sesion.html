@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card mt-5 shadow">
+            <div class="card-header text-white">
+                <h3 class="card-title text-center">Inicio de Sesión</h3>
+            </div>
+            <div class="card-body">
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="nombre">Nombre:</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Nombre de Empleado" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="clave_empleado">Clave de empleado:</label>
+                        <input type="password" class="form-control" id="clave_empleado" name="clave_empleado" placeholder="*****" required>
+                    </div>
+                    <button type="submit" class="btn btn-agregar btn-block">Iniciar sesión</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
