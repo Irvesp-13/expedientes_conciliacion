@@ -1,0 +1,101 @@
+# ========== PYTHON ==========
+# Archivos compilados
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ========== ENTORNO ==========
+# Variables de entorno sensibles (solo excluir .env, no .env.example)
+.env
+.env.local
+.env.*.local
+
+# ========== BASE DE DATOS ==========
+# Archivos de base de datos
+*.sqlite3
+*.sqlite
+*.db
+db.sqlite3
+
+# Backups de SQL
+*.sql
+*.sql.bak
+backups/*.sql
+backups/*.bak
+
+# ========== IDEs Y EDITORES ==========
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.sublime-project
+*.sublime-workspace
+
+# ========== SCRIPTS DE DESARROLLO Y SETUP ==========
+# Estos son scripts que se usaron una vez durante desarrollo
+# y no deben ser parte del código de producción
+create_empleado.py
+create_tables.py
+generate_forms_correct.py
+regenerate_forms.py
+reorganizar_templates.py
+reubicar_seccion.py
+reubicar_seccion_v2.py
+update_templates.py
+
+# ========== MIGRACIONES DE DJANGO ==========
+# Las migraciones se generan automáticamente con: python manage.py makemigrations
+# Excluir todos los archivos .py de migraciones compiladas
+app/migrations/*.py
+!app/migrations/__init__.py
+
+# ========== LOGS Y DEBUG ==========
+*.log
+*.log.*
+logs/
+debug/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ========== ARCHIVOS TEMPORALES ==========
+*.tmp
+*.temp
+*.cache
+*.bak
+*.backup
+~*
+
+# ========== SISTEMA OPERATIVO ==========
+# macOS
+.AppleDouble
+.LSOverride
+.TemporaryItems
+
+# Windows
+$RECYCLE.BIN/
+desktop.ini
+
+# Linux
+.directory
+
+# ========== OTROS ==========
+.git/
+.gitkeep
+*.orig
+.python-version

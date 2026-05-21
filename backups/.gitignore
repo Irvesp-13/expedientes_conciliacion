@@ -1,0 +1,3 @@
+# Este directorio es para almacenar backups de la base de datos
+# No subir backups a Git por seguridad
+*.sql

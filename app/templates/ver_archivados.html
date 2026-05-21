@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Expedientes Archivados{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card mt-5 shadow">
+            <div class="card-header text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Regresar
+                    </a>
+                    <h3 class="card-title mb-0">Expedientes Archivados</h3>
+                    <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Botones de acción -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        {% if empleado.es_administrador %}
+                        <button class="btn btn-danger" onclick="abrirModalEliminarPermanente()">
+                            <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="searchInput" class="form-control"
+                                placeholder="Buscar por Expediente, Actor, Demandado, Junta, Fecha o Motivo...">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()" title="Limpiar búsqueda">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                            <tr>
+                                {% if empleado.es_administrador %}
+                                <th width="50px">
+                                    <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                                </th>
+                                {% endif %}
+                                <th>ID</th>
+                                <th>Expediente</th>
+                                <th>Junta</th>
+                                <th>Actor</th>
+                                <th>Demandado</th>
+                                <th>Fecha de Archivo</th>
+                                <th>Motivo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for archivo in archivados %}
+                            <tr class="archivo-row">
+                                {% if empleado.es_administrador %}
+                                <td class="text-center">
+                                    <input type="checkbox" class="archivo-checkbox" value="{{ archivo.id_archivo }}">
+                                </td>
+                                {% endif %}
+                                <td>{{ archivo.id_archivo }}</td>
+                                <td>{{ archivo.expediente }}</td>
+                                <td>{{ archivo.junta }}</td>
+                                <td>{{ archivo.actor }}</td>
+                                <td>{{ archivo.demandado }}</td>
+                                <td>{{ archivo.fecha_archivo|date:"Y-m-d H:i" }}</td>
+                                <td>{{ archivo.motivo }}</td>
+                                <td class="text-center">
+                                    <button class="btn btn-success btn-sm" 
+                                            onclick="restaurarExpediente({{ archivo.id_archivo }})"
+                                            title="Restaurar expediente"
+                                            style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para eliminar permanentemente -->
+<div class="modal fade" id="modalEliminarPermanente" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Eliminar Permanentemente
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <strong>¡ADVERTENCIA!</strong> Esta acción eliminará permanentemente los expedientes seleccionados y no se podrán recuperar.
+                </div>
+                <p><strong>Expedientes seleccionados:</strong></p>
+                <ul id="listaExpedientesEliminar"></ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" onclick="confirmarEliminacion()">
+                    <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function limpiarBusqueda() {
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchInput').dispatchEvent(new Event('keyup'));
+    }
+
+    document.getElementById('searchInput').addEventListener('keyup', function () {
+        let searchText = this.value.toLowerCase();
+        let rows = document.getElementsByClassName('archivo-row');
+
+        for (let row of rows) {
+            {% if empleado.es_administrador %}
+            let expediente = row.cells[2].textContent.toLowerCase();
+            let junta = row.cells[3].textContent.toLowerCase();
+            let actor = row.cells[4].textContent.toLowerCase();
+            let demandado = row.cells[5].textContent.toLowerCase();
+            let fechaArchivo = row.cells[6].textContent.toLowerCase();
+            let motivo = row.cells[7].textContent.toLowerCase();
+            {% else %}
+            let expediente = row.cells[1].textContent.toLowerCase();
+            let junta = row.cells[2].textContent.toLowerCase();
+            let actor = row.cells[3].textContent.toLowerCase();
+            let demandado = row.cells[4].textContent.toLowerCase();
+            let fechaArchivo = row.cells[5].textContent.toLowerCase();
+            let motivo = row.cells[6].textContent.toLowerCase();
+            {% endif %}
+
+            if (expediente.includes(searchText) || 
+                junta.includes(searchText) || 
+                actor.includes(searchText) || 
+                demandado.includes(searchText) || 
+                fechaArchivo.includes(searchText) || 
+                motivo.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    });
+
+    function toggleSelectAll() {
+        const selectAll = document.getElementById('selectAll');
+        const checkboxes = document.getElementsByClassName('archivo-checkbox');
+        for (let checkbox of checkboxes) {
+            checkbox.checked = selectAll.checked;
+        }
+    }
+
+    function abrirModalEliminarPermanente() {
+        const checkboxes = document.querySelectorAll('.archivo-checkbox:checked');
+        if (checkboxes.length === 0) {
+            alert('Por favor seleccione al menos un expediente para eliminar');
+            return;
+        }
+
+        const lista = document.getElementById('listaExpedientesEliminar');
+        lista.innerHTML = '';
+
+        checkboxes.forEach(checkbox => {
+            const row = checkbox.closest('tr');
+            const expediente = row.cells[2].textContent;
+            const actor = row.cells[4].textContent;
+            const demandado = row.cells[5].textContent;
+            
+            const li = document.createElement('li');
+            li.textContent = `${expediente} - Actor: ${actor} vs Demandado: ${demandado}`;
+            lista.appendChild(li);
+        });
+
+        $('#modalEliminarPermanente').modal('show');
+    }
+
+    function confirmarEliminacion() {
+        const checkboxes = document.querySelectorAll('.archivo-checkbox:checked');
+        const ids = Array.from(checkboxes).map(cb => cb.value);
+
+        if (ids.length === 0) {
+            alert('No hay expedientes seleccionados');
+            return;
+        }
+
+        fetch("{% url 'eliminar_permanente' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: 'archivos_ids=' + JSON.stringify(ids)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar los expedientes');
+        });
+    }
+
+    function restaurarExpediente(idArchivo) {
+        if (confirm('¿Está seguro que desea restaurar este expediente?')) {
+            fetch("{% url 'restaurar_expediente' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: 'id_archivo=' + idArchivo
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al restaurar el expediente');
+            });
+        }
+    }
+</script>
+{% endblock %}
