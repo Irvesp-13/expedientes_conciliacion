@@ -32,6 +32,109 @@ def registrar_accion(empleado, accion, descripcion, request=None):
     )
 
 
+def formatear_identificador_expediente(expediente):
+    partes = [expediente.letra, expediente.exp, str(expediente.anio) if expediente.anio is not None else None]
+    identificador = ' '.join(parte for parte in partes if parte)
+    return identificador or f'Expediente {expediente.pk}'
+
+
+def obtener_snapshot_expediente(expediente):
+    snapshot = {}
+    for field in ConciliacionExpedientes._meta.fields:
+        if field.name != 'id':
+            snapshot[field.name] = getattr(expediente, field.name)
+    return snapshot
+
+
+def obtener_campos_exportables_expediente():
+    etiquetas = {
+        'letra': 'LETRA',
+        'exp': 'EXPEDIENTE',
+        'anio': 'AÑO',
+        'actor': 'ACTOR',
+        'demandado': 'DEMANDADO',
+        'area_en_la_que_se_encuentra': 'JUNTA/ÁREA',
+        'acuerdo_pendiente_de_caducidad': 'ACU.PTE.CADUCIDAD',
+        'caducidad': 'CADUCIDAD',
+        'acuerdo_pendiente_prescripcion': 'ACU.PTE.PRESCRIPCIÓN',
+        'prescripcion': 'PRESCRIPCIÓN',
+        'convenio_en_tramite': 'CONVENIO EN TRÁMITE',
+        'desistimiento': 'DESISTIMIENTO',
+        'por_no_interpuesta': 'POR NO INTERPUESTA',
+        'convenio_cumplimiento_laudo': 'CONVENIO CUMPL.LAUDO',
+        'archivado_por_recision': 'ARCHIVADO POR RESCISIÓN',
+        'descentralizado': 'DESCENTRALIZADO',
+        'incompetencia': 'INCOMPETENCIA',
+        'emplazamiento': 'EMPLAZAMIENTO',
+        'falta_not_actor_emplazamiento': 'FALTA NOT.ACTOR EMPL',
+        'falta_emplazar': 'FALTA EMPLAZAR',
+        'no_han_senalado': 'NO HAN SEÑALADO',
+        'terminio': 'TERMINIO',
+        'imposibilidad_emplazamiento': 'IMPOSIBILIDAD EMPL',
+        'exhorto': 'EXHORTO',
+        'procedimiento': 'PROCEDIMIENTO',
+        'cita_conciliacion': 'CITA CONCILIACIÓN',
+        'sin_cita_conciliacion': 'SIN CITA CONCIL',
+        'convenio_p_cumpl': 'CONVENIO P.CUMPL',
+        'cde': 'CDE',
+        'tercero_audiencia': 'TERCERO AUDIENCIA',
+        'oap': 'OAP',
+        'pruebas': 'PRUEBAS',
+        'reserva': 'RESERVA',
+        'pendiente_revision': 'PENDIENTE REVISIÓN',
+        'notificadas_ambas': 'NOTIFICADAS AMBAS',
+        'desahogo_pruebas': 'DESAHOGO PRUEBAS',
+        'falta_citar_test': 'FALTA CITAR TEST',
+        'fata_not_partes': 'FALTA NOT.PARTES',
+        'fuerza_publica_testimonial': 'FUERZA PÚBLICA TEST',
+        'justificante': 'JUSTIFICANTE',
+        'actora': 'ACTORA',
+        'demandada': 'DEMANDADA',
+        'tercero': 'TERCERO',
+        'falta_designar_per': 'FALTA DESIGNAR PER',
+        'falta_not_partes_conf': 'FALTA NOT.PARTES CONF',
+        'falta_ir_domicilio': 'FALTA IR DOMICILIO',
+        'f_hacer_oficio': 'FALTA HACER OFICIO',
+        'falta_girar_oficio': 'FALTA GIRAR OFICIO',
+        'sin_respuesta': 'SIN RESPUESTA',
+        'falta_inspeccion': 'FALTA INSPECCIÓN',
+        'falta_cotejo': 'FALTA COTEJO',
+        'inc_nul_not': 'INC.NUL.NOT',
+        'cierre': 'CIERRE',
+        'alegatos': 'ALEGATOS',
+        'prueba_pendiente': 'PRUEBA PENDIENTE',
+        'cierre_cierre': 'CIERRE/DEPURACIÓN',
+        'pendiente_de_laudo': 'PENDIENTE LAUDO',
+        'dictado': 'DICTADO',
+        'falta_not_partes_dictados': 'FALTA NOT.PARTES DICT',
+        'condenatorio': 'CONDENATORIO',
+        'absolutorio': 'ABSOLUTORIO',
+        'en_colegiado': 'EN COLEGIADO',
+        'ejecucion': 'EJECUCIÓN',
+        'auto_ejecucion': 'AUTO EJECUCIÓN',
+        'falta_not_actor_ejecucion': 'FALTA NOT.ACTOR EJEC',
+        'requerimiento': 'REQUERIMIENTO',
+        'fuerza_publica_requerimiento': 'FUERZA PÚBLICA REQ',
+        'imposibilidad_requerimiento': 'IMPOSIBILIDAD REQ',
+        'inembargable': 'INEMBARGABLE',
+        'cuentas_embargadas': 'CUENTAS EMBARGADAS',
+        'embargo_de_bien_inmueble_yo_muebles': 'EMBARGO DE BIENES',
+        'revision': 'REVISIÓN',
+        'falta_reso_rev': 'FALTA RESO.REV',
+        'falta_not_partes_requerimiento': 'FALTA NOT.PARTES REQ',
+        'remate': 'REMATE',
+        'indirecto': 'AMPARO INDIRECTO',
+        'emplazar': 'EMPLAZAR',
+        'desahogo_pruebas_indirecto': 'DESAHOGO PRUEBAS IND',
+        'dictar_laudo': 'DICTAR LAUDO',
+        'ejecucion_indirecto': 'EJECUCIÓN IND',
+        'directo': 'AMPARO DIRECTO',
+    }
+
+    campos = [field.name for field in ConciliacionExpedientes._meta.fields if field.name != 'id']
+    return [(campo, etiquetas.get(campo, campo.replace('_', ' ').upper())) for campo in campos]
+
+
 def iniciar_sesion(request):
     if request.method == 'POST':
         nombre = request.POST['nombre']
@@ -473,23 +576,38 @@ def cargar_expediente(request):
     if request.method == 'POST':
         empleado_id = request.session.get('empleado_id')
         expediente_id = request.POST.get('expediente_id')
-        nombre_carga = request.POST.get('nombre_carga')
+        nombre_carga = request.POST.get('nombre_carga', '').strip()
+
+        if not empleado_id:
+            return JsonResponse({'success': False, 'error': 'Sesión no iniciada'})
+
+        if not expediente_id:
+            return JsonResponse({'success': False, 'error': 'No se proporcionó el expediente'})
+
+        if not nombre_carga:
+            return JsonResponse({'success': False, 'error': 'El nombre de carga es obligatorio'})
 
         try:
             empleado = Empleado.objects.get(id=empleado_id)
             expediente = ConciliacionExpedientes.objects.get(pk=expediente_id)
-            
-            carga = CargaDescarga(
+            carga = CargaDescarga.objects.create(
                 empleado=empleado,
                 expediente=expediente,
-                nombre_carga=nombre_carga
+                nombre_carga=nombre_carga,
             )
-            carga.save()
-            
-            # Registrar en bitácora
-            registrar_accion(empleado, 'Cargar expediente', f'Cargó el expediente {expediente.letra} {expediente.exp}/{expediente.anio} - {nombre_carga}', request)
-            
-            return JsonResponse({'success': True})
+
+            registrar_accion(
+                empleado,
+                'Cargar expediente',
+                f'Cargó el expediente {formatear_identificador_expediente(expediente)} - {nombre_carga}',
+                request,
+            )
+
+            return JsonResponse({'success': True, 'id': carga.id})
+        except Empleado.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'El empleado no existe'})
+        except ConciliacionExpedientes.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'El expediente no existe'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -502,7 +620,7 @@ def ver_cargas(request):
     
     empleado = Empleado.objects.get(id=empleado_id)
     
-    cargas = CargaDescarga.objects.all().order_by('-fecha')
+    cargas = CargaDescarga.objects.select_related('empleado', 'expediente').all().order_by('-fecha')
     return render(request, 'ver_cargas.html', {'cargas': cargas})
 
 
@@ -526,15 +644,16 @@ def archivar_expediente(request):
             for expediente_id in expedientes_ids:
                 try:
                     expediente = ConciliacionExpedientes.objects.get(pk=expediente_id)
+                    snapshot = obtener_snapshot_expediente(expediente)
                     
-                    # Create archive record with all fields as strings
+                    # Guardar el expediente completo para restauración posterior
                     Archivados.objects.create(
-                        expediente=f"{expediente.letra or ''} {expediente.exp or ''}/{expediente.anio or ''}".strip(),
-                        junta=expediente.area_en_la_que_se_encuentra,
-                        actor=expediente.actor,
-                        demandado=expediente.demandado,
+                        expediente=formatear_identificador_expediente(expediente),
+                        junta=expediente.area_en_la_que_se_encuentra or '',
+                        actor=expediente.actor or '',
+                        demandado=expediente.demandado or '',
                         motivo=motivo,
-                        fecha_archivo=timezone.now()
+                        datos_expediente=snapshot,
                     )
                     
                     # Delete from original table
@@ -567,7 +686,7 @@ def obtener_expedientes_ajax(request):
     expedientes_list = [
         {
             'id': expediente.id,
-            'expediente': f"{expediente.letra or ''} {expediente.exp or ''}/{expediente.anio or ''}".strip(),
+            'expediente': formatear_identificador_expediente(expediente),
             'junta': expediente.area_en_la_que_se_encuentra,
             'actor_nombre': expediente.actor,
             'demandado_nombre': expediente.demandado,
@@ -595,7 +714,7 @@ def exportar_expedientes_excel(request):
         messages.error(request, 'Debes iniciar sesión')
         return redirect('iniciar_sesion')
     
-    # Obtener todos los expedientes de la tabla 'expedientes'
+    # Obtener todos los expedientes de la tabla principal
     expedientes = ConciliacionExpedientes.objects.all()
     
     # Crear el libro de Excel
@@ -608,32 +727,8 @@ def exportar_expedientes_excel(request):
     header_font = Font(bold=True, color="FFFFFF", size=11)
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
     
-    # Definir las columnas según el modelo ConciliacionExpedientes actual
-    headers = [
-        'LETRA', 'EXPEDIENTE', 'AÑO', 'ACTOR', 'DEMANDADO', 'JUNTA/ÁREA',
-        'ACU.PTE.CADUCIDAD', 'CADUCIDAD', 'ACU.PTE.PRESCRIPCIÓN', 'PRESCRIPCIÓN', 
-        'CONVENIO EN TRÁMITE', 'DESISTIMIENTO', 'POR NO INTERPUESTA', 'CONVENIO CUMPL.LAUDO',
-        'ARCHIVADO POR RESCISIÓN', 'DESCENTRALIZADO', 'INCOMPETENCIA',
-        'EMPLAZAMIENTO', 'FALTA NOT.ACTOR EMPL', 'FALTA EMPLAZAR', 'NO HAN SEÑALADO',
-        'TERMINIO', 'IMPOSIBILIDAD EMPL', 'EXHORTO',
-        'PROCEDIMIENTO', 'CITA CONCILIACIÓN', 'SIN CITA CONCIL', 'CONVENIO P.CUMPL',
-        'CDE', 'TERCERO AUDIENCIA', 'OAP',
-        'PRUEBAS', 'RESERVA', 'PENDIENTE REVISIÓN', 'NOTIFICADAS AMBAS',
-        'DESAHOGO PRUEBAS',
-        'FALTA CITAR TEST', 'FALTA NOT.PARTES', 'FUERZA PÚBLICA TEST', 'JUSTIFICANTE',
-        'ACTORA', 'DEMANDADA', 'TERCERO', 'FALTA DESIGNAR PER',
-        'FALTA NOT.PARTES CONF', 'FALTA IR DOMICILIO',
-        'FALTA HACER OFICIO', 'FALTA GIRAR OFICIO', 'SIN RESPUESTA',
-        'FALTA INSPECCIÓN', 'FALTA COTEJO', 'INC.NUL.NOT',
-        'CIERRE', 'ALEGATOS', 'PRUEBA PENDIENTE', 'CIERRE/DEPURACIÓN', 'PENDIENTE LAUDO',
-        'DICTADO', 'FALTA NOT.PARTES DICT', 'CONDENATORIO', 'ABSOLUTORIO', 'EN COLEGIADO',
-        'EJECUCIÓN', 'AUTO EJECUCIÓN', 'FALTA NOT.ACTOR EJEC',
-        'REQUERIMIENTO', 'FUERZA PÚBLICA REQ', 'IMPOSIBILIDAD REQ', 'INEMBARGABLE',
-        'CUENTAS EMBARGADAS', 'EMBARGO DE BIENES', 'REVISIÓN', 'FALTA RESO.REV',
-        'FALTA NOT.PARTES REQ', 'REMATE',
-        'AMPARO INDIRECTO', 'EMPLAZAR', 'DESAHOGO PRUEBAS IND', 'DICTAR LAUDO', 'EJECUCIÓN IND',
-        'AMPARO DIRECTO'
-    ]
+    campos_exportables = obtener_campos_exportables_expediente()
+    headers = [etiqueta for _, etiqueta in campos_exportables]
     
     # Escribir encabezados
     for col_num, header in enumerate(headers, 1):
@@ -644,29 +739,7 @@ def exportar_expedientes_excel(request):
         cell.alignment = header_alignment
         ws.column_dimensions[cell.column_letter].width = 12
     
-    # Escribir los datos de los expedientes (mapeo de campos del modelo)
-    column_fields = [
-        'letra', 'exp', 'anio', 'actor', 'demandado', 'area_en_la_que_se_encuentra',
-        'acuerdo_pendiente_de_caducidad', 'caducidad', 'acuerdo_pendiente_prescripcion',
-        'prescripcion', 'convenio_en_tramite', 'desistimiento', 'por_no_interpuesta',
-        'convenio_cumplimiento_laudo', 'archivado_por_recision', 'descentralizado',
-        'incompetencia', 'emplazamiento', 'falta_not_actor_emplazamiento', 'falta_emplazar',
-        'no_han_senalado', 'terminio', 'imposibilidad_emplazamiento', 'exhorto',
-        'procedimiento', 'cita_conciliacion', 'sin_cita_conciliacion', 'convenio_p_cumpl',
-        'cde', 'tercero_audiencia', 'oap', 'pruebas', 'reserva', 'pendiente_revision',
-        'notificadas_ambas', 'desahogo_pruebas', 'falta_citar_test', 'fata_not_partes',
-        'fuerza_publica_testimonial', 'justificante', 'actora', 'demandada', 'tercero',
-        'falta_designar_per', 'falta_not_partes_conf', 'falta_ir_domicilio', 'f_hacer_oficio',
-        'falta_girar_oficio', 'sin_respuesta', 'falta_inspeccion', 'falta_cotejo',
-        'inc_nul_not', 'cierre', 'alegatos', 'prueba_pendiente', 'cierre_cierre',
-        'pendiente_de_laudo', 'dictado', 'falta_not_partes_dictados', 'condenatorio',
-        'absolutorio', 'en_colegiado', 'ejecucion', 'auto_ejecucion',
-        'falta_not_actor_ejecucion', 'requerimiento', 'fuerza_publica_requerimiento',
-        'imposibilidad_requerimiento', 'inembargable', 'cuentas_embargadas',
-        'embargo_de_bien_inmueble_yo_muebles', 'revision', 'falta_reso_rev',
-        'falta_not_partes_requerimiento', 'remate', 'indirecto', 'emplazar',
-        'desahogo_pruebas_indirecto', 'dictar_laudo', 'ejecucion_indirecto', 'directo'
-    ]
+    column_fields = [campo for campo, _ in campos_exportables]
     
     for row_num, exp in enumerate(expedientes, 2):
         for col_num, field in enumerate(column_fields, 1):
@@ -743,45 +816,25 @@ def restaurar_expediente(request):
         
         # Obtener el expediente archivado
         archivo = Archivados.objects.get(id_archivo=id_archivo)
-        
-        # Obtener el último id para generar uno nuevo
-        last_expediente = ConciliacionExpedientes.objects.order_by('-id').first()
-        new_id = 1 if not last_expediente else last_expediente.id + 1
-        
-        # Restaurar el expediente con los datos del archivo
-        # Parseando expediente en formato "LETRA EXP/ANIO"
-        try:
-            partes = archivo.expediente.strip().split('/')
-            if len(partes) == 2:
-                anio_str = partes[1]
-                exp_y_letra = partes[0].strip().split()
-                if len(exp_y_letra) >= 2:
-                    letra = exp_y_letra[0]
-                    exp = '/'.join(exp_y_letra[1:])
-                    anio = int(anio_str) if anio_str.isdigit() else None
-                else:
-                    letra = None
-                    exp = partes[0]
-                    anio = int(anio_str) if anio_str.isdigit() else None
-            else:
-                letra = None
-                exp = archivo.expediente
-                anio = None
-        except:
-            letra = None
-            exp = archivo.expediente
-            anio = None
-        
-        # Crear el expediente restaurado
-        expediente_restaurado = ConciliacionExpedientes.objects.create(
-            id=new_id,
-            letra=letra,
-            exp=exp,
-            anio=anio,
-            actor=archivo.actor,
-            demandado=archivo.demandado,
-            area_en_la_que_se_encuentra=archivo.junta,
-        )
+
+        datos_expediente = archivo.datos_expediente or {}
+        if not datos_expediente:
+            datos_expediente = {
+                'letra': None,
+                'exp': archivo.expediente,
+                'anio': None,
+                'actor': archivo.actor,
+                'demandado': archivo.demandado,
+                'area_en_la_que_se_encuentra': archivo.junta,
+            }
+
+        expediente_kwargs = {}
+        for field in ConciliacionExpedientes._meta.fields:
+            if field.name == 'id':
+                continue
+            expediente_kwargs[field.name] = datos_expediente.get(field.name)
+
+        expediente_restaurado = ConciliacionExpedientes.objects.create(**expediente_kwargs)
         
         # Registrar en bitácora
         registrar_accion(

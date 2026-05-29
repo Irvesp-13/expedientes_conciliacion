@@ -123,6 +123,7 @@ class Archivados(models.Model):
     demandado = models.CharField(max_length=255)
     fecha_archivo = models.DateTimeField(auto_now_add=True)
     motivo = models.TextField()
+    datos_expediente = models.JSONField(default=dict, blank=True)
 
     class Meta:
         db_table = 'archivados'

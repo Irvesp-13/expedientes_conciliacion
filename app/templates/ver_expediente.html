@@ -1,0 +1,779 @@
+{% extends 'base.html' %}
+
+{% block title %}Ver Expediente{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card mt-2 shadow">
+            <div class="card-header text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-arrow-left"></i> Regresar
+                    </a>
+                    <h3 class="card-title mb-0">Ver Expediente</h3>
+                    <a href="{% url 'editar_expediente' expediente.id %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- DATOS GENERALES -->
+                <h5 class="mb-3 text-primary"><i class="fas fa-file"></i> Datos Generales</h5>
+                <div class="row">
+                    <div class="col-md-2 mb-3">
+                        <strong>Letra:</strong>
+                        <p>{{ expediente.letra|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Expediente:</strong>
+                        <p>{{ expediente.exp|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Año:</strong>
+                        <p>{{ expediente.anio|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Área donde se encuentra:</strong>
+                        <p>{{ expediente.area_en_la_que_se_encuentra|default:"N/A" }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <strong>Actor:</strong>
+                        <p>{{ expediente.actor|default:"N/A" }}</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <strong>Demandado:</strong>
+                        <p>{{ expediente.demandado|default:"N/A" }}</p>
+                    </div>
+                </div>
+
+                <!-- ESTADO DEL EXPEDIENTE -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-info-circle"></i> Estado del Expediente</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Acuerdo pte. caducidad:</strong>
+                        {% if expediente.acuerdo_pendiente_de_caducidad %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Caducidad:</strong>
+                        {% if expediente.caducidad %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Acuerdo pte. presc.:</strong>
+                        {% if expediente.acuerdo_pendiente_prescripcion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Prescripción:</strong>
+                        {% if expediente.prescripcion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Convenio en trámite:</strong>
+                        {% if expediente.convenio_en_tramite %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Desistimiento:</strong>
+                        {% if expediente.desistimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Por no interpuesta:</strong>
+                        {% if expediente.por_no_interpuesta %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Convenio cumpl. laudo:</strong>
+                        {% if expediente.convenio_cumplimiento_laudo %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Archivado por rescisión:</strong>
+                        {% if expediente.archivado_por_recision %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Descentralizado:</strong>
+                        {% if expediente.descentralizado %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Incompetencia:</strong>
+                        {% if expediente.incompetencia %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- EMPLAZAMIENTO -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-envelope"></i> Emplazamiento</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Emplazamiento:</strong>
+                        {% if expediente.emplazamiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Falta notificación actor:</strong>
+                        {% if expediente.falta_not_actor_emplazamiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Falta emplazar:</strong>
+                        {% if expediente.falta_emplazar %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>No han señalado:</strong>
+                        {% if expediente.no_han_senalado %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Terminio:</strong>
+                        {% if expediente.terminio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Imposibilidad emplaz.:</strong>
+                        {% if expediente.imposibilidad_emplazamiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Exhorto:</strong>
+                        {% if expediente.exhorto %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- PROCEDIMIENTO -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-gavel"></i> Procedimiento</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <strong>Procedimiento:</strong>
+                        {% if expediente.procedimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Cita conciliación:</strong>
+                        {% if expediente.cita_conciliacion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Sin cita concil.:</strong>
+                        {% if expediente.sin_cita_conciliacion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Convenio P. Cumpl.:</strong>
+                        {% if expediente.convenio_p_cumpl %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>CDE:</strong>
+                        {% if expediente.cde %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Tercero audiencia:</strong>
+                        {% if expediente.tercero_audiencia %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>OAP:</strong>
+                        {% if expediente.oap %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- PRUEBAS -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-check-circle"></i> Pruebas</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <strong>Pruebas:</strong>
+                        {% if expediente.pruebas %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Reserva:</strong>
+                        {% if expediente.reserva %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Pendiente revisión:</strong>
+                        {% if expediente.pendiente_revision %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Notificadas ambas:</strong>
+                        {% if expediente.notificadas_ambas %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Desahogo pruebas:</strong>
+                        {% if expediente.desahogo_pruebas %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta citar test:</strong>
+                        {% if expediente.falta_citar_test %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta not. partes:</strong>
+                        {% if expediente.fata_not_partes %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Fuerza pública testimonial:</strong>
+                        {% if expediente.fuerza_publica_testimonial %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- PERITOS -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-user-tie"></i> Peritos</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <strong>Justificante:</strong>
+                        {% if expediente.justificante %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Actora:</strong>
+                        {% if expediente.actora %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Demandada:</strong>
+                        {% if expediente.demandada %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Tercero:</strong>
+                        {% if expediente.tercero %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta designar perito:</strong>
+                        {% if expediente.falta_designar_per %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta not. partes conf.:</strong>
+                        {% if expediente.falta_not_partes_conf %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta ir domicilio:</strong>
+                        {% if expediente.falta_ir_domicilio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta hacer oficio:</strong>
+                        {% if expediente.f_hacer_oficio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta girar oficio:</strong>
+                        {% if expediente.falta_girar_oficio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Sin respuesta:</strong>
+                        {% if expediente.sin_respuesta %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta inspección:</strong>
+                        {% if expediente.falta_inspeccion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta cotejo:</strong>
+                        {% if expediente.falta_cotejo %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- NULIDAD Y CIERRE -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-times-circle"></i> Nulidad y Cierre</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Inc. nulidad not.:</strong>
+                        {% if expediente.inc_nul_not %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Cierre:</strong>
+                        {% if expediente.cierre %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Alegatos:</strong>
+                        {% if expediente.alegatos %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Prueba pendiente:</strong>
+                        {% if expediente.prueba_pendiente %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Cierre cierre:</strong>
+                        {% if expediente.cierre_cierre %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- LAUDO -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-gavel"></i> Laudo</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <strong>Pendiente de laudo:</strong>
+                        {% if expediente.pendiente_de_laudo %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Dictado:</strong>
+                        {% if expediente.dictado %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Falta not. partes dictados:</strong>
+                        {% if expediente.falta_not_partes_dictados %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Condenatorio:</strong>
+                        {% if expediente.condenatorio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>Absolutorio:</strong>
+                        {% if expediente.absolutorio %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <strong>En colegiado:</strong>
+                        {% if expediente.en_colegiado %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- EJECUCIÓN -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-coins"></i> Ejecución</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>Ejecución:</strong>
+                        {% if expediente.ejecucion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Auto ejecución:</strong>
+                        {% if expediente.auto_ejecucion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Falta not. actor ejecución:</strong>
+                        {% if expediente.falta_not_actor_ejecucion %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Requerimiento:</strong>
+                        {% if expediente.requerimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Fuerza pública requerimiento:</strong>
+                        {% if expediente.fuerza_publica_requerimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Imposibilidad requerimiento:</strong>
+                        {% if expediente.imposibilidad_requerimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Inembargable:</strong>
+                        {% if expediente.inembargable %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Cuentas embargadas:</strong>
+                        {% if expediente.cuentas_embargadas %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Embargo bienes inmuebles/muebles:</strong>
+                        {% if expediente.embargo_de_bien_inmueble_yo_muebles %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Revisión:</strong>
+                        {% if expediente.revision %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Falta reso. rev:</strong>
+                        {% if expediente.falta_reso_rev %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Falta not. partes requerimiento:</strong>
+                        {% if expediente.falta_not_partes_requerimiento %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>Remate:</strong>
+                        {% if expediente.remate %}
+                            <span class="badge badge-success">SI</span>
+                        {% else %}
+                            <span class="badge badge-secondary">NO</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- CUMPLIMIENTO INDIRECTO Y DIRECTO -->
+                <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-check"></i> Formas de Cumplimiento</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Cumplimiento Indirecto</h6>
+                        <div class="mb-2">
+                            <strong>Indirecto:</strong>
+                            {% if expediente.indirecto %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Emplazar:</strong>
+                            {% if expediente.emplazar %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Desahogo pruebas indirecto:</strong>
+                            {% if expediente.desahogo_pruebas_indirecto %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Dictar laudo:</strong>
+                            {% if expediente.dictar_laudo %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-2">
+                            <strong>Ejecución indirecto:</strong>
+                            {% if expediente.ejecucion_indirecto %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Cumplimiento Directo</h6>
+                        <div class="mb-2">
+                            <strong>Directo:</strong>
+                            {% if expediente.directo %}
+                                <span class="badge badge-success">SI</span>
+                            {% else %}
+                                <span class="badge badge-secondary">NO</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        margin-top: 0;
+    }
+
+    .card-header {
+        position: fixed;
+        top: 70px;
+        z-index: 99;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin: 0;
+        background-color: var(--color-primary) !important;
+    }
+
+    .card-body {
+        margin-top: 150px;
+    }
+
+    .badge {
+        margin-right: 5px;
+        margin-bottom: 5px;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background-color: #28a745 !important;
+        color: white !important;
+        box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+    }
+
+    .badge-secondary {
+        background-color: #e9ecef !important;
+        color: #495057 !important;
+    }
+
+    strong {
+        color: var(--color-primary);
+        font-weight: 600;
+    }
+
+    p {
+        margin-bottom: 0;
+        color: var(--color-text);
+    }
+</style>
+
+<script>
+    function syncHeaderWidth() {
+        const card = document.querySelector('.card');
+        const header = document.querySelector('.card-header');
+        
+        if (card && header) {
+            const cardWidth = card.offsetWidth;
+            const cardRect = card.getBoundingClientRect();
+            const cardLeft = cardRect.left;
+            
+            header.style.width = cardWidth + 'px';
+            header.style.left = cardLeft + 'px';
+        }
+    }
+
+    // Sincronizar al cargar
+    document.addEventListener('DOMContentLoaded', syncHeaderWidth);
+    
+    // Sincronizar cuando se redimensiona la ventana
+    window.addEventListener('resize', syncHeaderWidth);
+    
+    // Sincronizar cada 500ms para detectar cambios dinámicos
+    setInterval(syncHeaderWidth, 500);
+</script>
+{% endblock %}
