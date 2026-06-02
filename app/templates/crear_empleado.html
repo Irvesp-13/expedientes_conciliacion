@@ -30,8 +30,9 @@
             <label for="puesto" class="form-label">Puesto:</label>
             <select class="form-control" id="puesto" name="puesto" required>
                 <option value="">Seleccione un puesto</option>
-                <option value="1">Administrador</option>
-                <option value="2">Usuario normal</option>
+                {% for value, label in puestos %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
             </select>
         </div>
         <button type="submit" class="btn btn-primary">
@@ -62,13 +63,7 @@
                     <td>{{ user.id }}</td>
                     <td>{{ user.nombre }}</td>
                     <td>{{ user.clave_empleado }}</td>
-                    <td>
-                        {% if user.puesto == 1 %}
-                            Administrador
-                        {% else %}
-                            Usuario normal
-                        {% endif %}
-                    </td>
+                    <td>{{ user.get_puesto_display }}</td>
                     <td>
                         <a href="{% url 'editar_empleado' user.id %}" class="btn btn-sm btn-warning">Editar</a>
                         <a href="{% url 'eliminar_empleado' user.id %}" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este usuario?');">Eliminar</a>

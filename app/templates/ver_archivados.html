@@ -19,7 +19,7 @@
                 <!-- Botones de acción -->
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        {% if empleado.es_administrador %}
+                        {% if empleado.puede_gestionar_usuarios %}
                         <button class="btn btn-danger" onclick="abrirModalEliminarPermanente()">
                             <i class="fas fa-trash-alt"></i> Eliminar Permanentemente
                         </button>
@@ -42,7 +42,7 @@
                     <table class="table table-bordered table-striped table-hover">
                         <thead>
                             <tr>
-                                {% if empleado.es_administrador %}
+                                {% if empleado.puede_gestionar_usuarios %}
                                 <th width="50px">
                                     <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
                                 </th>
@@ -60,7 +60,7 @@
                         <tbody>
                             {% for archivo in archivados %}
                             <tr class="archivo-row">
-                                {% if empleado.es_administrador %}
+                                {% if empleado.puede_gestionar_usuarios %}
                                 <td class="text-center">
                                     <input type="checkbox" class="archivo-checkbox" value="{{ archivo.id_archivo }}">
                                 </td>
@@ -73,12 +73,14 @@
                                 <td>{{ archivo.fecha_archivo|date:"Y-m-d H:i" }}</td>
                                 <td>{{ archivo.motivo }}</td>
                                 <td class="text-center">
+                                    {% if empleado.puede_archivar_expedientes %}
                                     <button class="btn btn-success btn-sm" 
                                             onclick="restaurarExpediente({{ archivo.id_archivo }})"
                                             title="Restaurar expediente"
                                             style="padding: 0.25rem 0.5rem; font-size: 0.875rem;">
                                         <i class="fas fa-undo"></i>
                                     </button>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -119,134 +121,220 @@
     </div>
 </div>
 
-<script>
-    function limpiarBusqueda() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('searchInput').dispatchEvent(new Event('keyup'));
-    }
+            <!-- SweetAlert2 -->
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    document.getElementById('searchInput').addEventListener('keyup', function () {
-        let searchText = this.value.toLowerCase();
-        let rows = document.getElementsByClassName('archivo-row');
-
-        for (let row of rows) {
-            {% if empleado.es_administrador %}
-            let expediente = row.cells[2].textContent.toLowerCase();
-            let junta = row.cells[3].textContent.toLowerCase();
-            let actor = row.cells[4].textContent.toLowerCase();
-            let demandado = row.cells[5].textContent.toLowerCase();
-            let fechaArchivo = row.cells[6].textContent.toLowerCase();
-            let motivo = row.cells[7].textContent.toLowerCase();
-            {% else %}
-            let expediente = row.cells[1].textContent.toLowerCase();
-            let junta = row.cells[2].textContent.toLowerCase();
-            let actor = row.cells[3].textContent.toLowerCase();
-            let demandado = row.cells[4].textContent.toLowerCase();
-            let fechaArchivo = row.cells[5].textContent.toLowerCase();
-            let motivo = row.cells[6].textContent.toLowerCase();
-            {% endif %}
-
-            if (expediente.includes(searchText) || 
-                junta.includes(searchText) || 
-                actor.includes(searchText) || 
-                demandado.includes(searchText) || 
-                fechaArchivo.includes(searchText) || 
-                motivo.includes(searchText)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
+            <script>
+    // Helper para obtener CSRF desde cookie (fallback si no se inyecta template token)
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
             }
         }
-    });
+        return cookieValue;
+    }
+
+    function limpiarBusqueda() {
+        const input = document.getElementById('searchInput');
+        if (!input) return;
+        input.value = '';
+        input.dispatchEvent(new Event('keyup'));
+    }
+
+    (function () {
+        const input = document.getElementById('searchInput');
+        if (!input) return;
+
+        input.addEventListener('keyup', function () {
+            const searchText = this.value.toLowerCase();
+            const rows = document.getElementsByClassName('archivo-row');
+
+            for (let row of rows) {
+                {% if empleado.puede_gestionar_usuarios %}
+                const expediente = (row.cells[2] && row.cells[2].textContent || '').toLowerCase();
+                const junta = (row.cells[3] && row.cells[3].textContent || '').toLowerCase();
+                const actor = (row.cells[4] && row.cells[4].textContent || '').toLowerCase();
+                const demandado = (row.cells[5] && row.cells[5].textContent || '').toLowerCase();
+                const fechaArchivo = (row.cells[6] && row.cells[6].textContent || '').toLowerCase();
+                const motivo = (row.cells[7] && row.cells[7].textContent || '').toLowerCase();
+                {% else %}
+                const expediente = (row.cells[1] && row.cells[1].textContent || '').toLowerCase();
+                const junta = (row.cells[2] && row.cells[2].textContent || '').toLowerCase();
+                const actor = (row.cells[3] && row.cells[3].textContent || '').toLowerCase();
+                const demandado = (row.cells[4] && row.cells[4].textContent || '').toLowerCase();
+                const fechaArchivo = (row.cells[5] && row.cells[5].textContent || '').toLowerCase();
+                const motivo = (row.cells[6] && row.cells[6].textContent || '').toLowerCase();
+                {% endif %}
+
+                if (expediente.includes(searchText) || 
+                    junta.includes(searchText) || 
+                    actor.includes(searchText) || 
+                    demandado.includes(searchText) || 
+                    fechaArchivo.includes(searchText) || 
+                    motivo.includes(searchText)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            }
+        });
+    })();
+
+    // Helper para manejar respuestas fetch y evitar errores si no es JSON
+    function handleFetchResponse(response) {
+        if (!response.ok) {
+            return response.text().then(text => { throw new Error(text || ('HTTP error ' + response.status)); });
+        }
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.indexOf('application/json') !== -1) {
+            return response.json();
+        }
+        return response.text().then(text => {
+            try { return JSON.parse(text); } catch (e) { return { success: false, error: text || 'Respuesta inesperada' }; }
+        });
+    }
 
     function toggleSelectAll() {
         const selectAll = document.getElementById('selectAll');
-        const checkboxes = document.getElementsByClassName('archivo-checkbox');
-        for (let checkbox of checkboxes) {
-            checkbox.checked = selectAll.checked;
-        }
+        if (!selectAll) return;
+        const checkboxes = Array.from(document.getElementsByClassName('archivo-checkbox'));
+        checkboxes.forEach(checkbox => { checkbox.checked = selectAll.checked; });
     }
 
     function abrirModalEliminarPermanente() {
-        const checkboxes = document.querySelectorAll('.archivo-checkbox:checked');
+        const checkboxes = Array.from(document.querySelectorAll('.archivo-checkbox:checked'));
         if (checkboxes.length === 0) {
-            alert('Por favor seleccione al menos un expediente para eliminar');
+            Swal.fire({ icon: 'warning', title: 'Selecciona al menos uno', text: 'Por favor seleccione al menos un expediente para eliminar' });
             return;
         }
 
-        const lista = document.getElementById('listaExpedientesEliminar');
-        lista.innerHTML = '';
+        // Construir lista HTML para mostrar en SweetAlert
+        const ids = [];
+        const itemsHtml = checkboxes.map(cb => {
+            const row = cb.closest('tr');
+            const expediente = (row && row.cells[2] && row.cells[2].textContent) ? row.cells[2].textContent : '';
+            const actor = (row && row.cells[4] && row.cells[4].textContent) ? row.cells[4].textContent : '';
+            const demandado = (row && row.cells[5] && row.cells[5].textContent) ? row.cells[5].textContent : '';
+            ids.push(cb.value);
+            return `<li>${expediente} - Actor: ${actor} vs Demandado: ${demandado}</li>`;
+        }).join('');
 
-        checkboxes.forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            const expediente = row.cells[2].textContent;
-            const actor = row.cells[4].textContent;
-            const demandado = row.cells[5].textContent;
-            
-            const li = document.createElement('li');
-            li.textContent = `${expediente} - Actor: ${actor} vs Demandado: ${demandado}`;
-            lista.appendChild(li);
+        const html = `<p><strong>Expedientes seleccionados:</strong></p><ul style="text-align:left">${itemsHtml}</ul>`;
+
+        Swal.fire({
+            title: 'Eliminar Permanentemente',
+            html: html,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Eliminar Permanentemente',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#d33',
+            width: 700,
+            preConfirm: () => {
+                return confirmarEliminacion(ids, /*noConfirm*/ true);
+            }
         });
-
-        $('#modalEliminarPermanente').modal('show');
     }
 
-    function confirmarEliminacion() {
-        const checkboxes = document.querySelectorAll('.archivo-checkbox:checked');
-        const ids = Array.from(checkboxes).map(cb => cb.value);
-
-        if (ids.length === 0) {
-            alert('No hay expedientes seleccionados');
-            return;
+    // confirmarEliminacion(ids, noConfirm=false)
+    // si ids proporcionado y noConfirm=true se asume confirmación previa (usado por SweetAlert preConfirm)
+    function confirmarEliminacion(ids, noConfirm) {
+        if (!ids || ids.length === 0) {
+            const checkboxes = Array.from(document.querySelectorAll('.archivo-checkbox:checked'));
+            ids = checkboxes.map(cb => cb.value);
         }
 
-        fetch("{% url 'eliminar_permanente' %}", {
+        if (!ids || ids.length === 0) {
+            Swal.fire({ icon: 'warning', title: 'No hay expedientes', text: 'No hay expedientes seleccionados' });
+            return Promise.resolve({ success: false, error: 'No hay expedientes seleccionados' });
+        }
+
+        // Preferir cookie CSRF cuando esté disponible (Django por defecto)
+        let csrfToken = getCookie('csrftoken') || "{{ csrf_token }}";
+
+        // Mostrar carga
+        Swal.fire({ title: 'Eliminando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        return fetch("{% url 'eliminar_permanente' %}", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': '{{ csrf_token }}'
+                'X-CSRFToken': csrfToken
             },
-            body: 'archivos_ids=' + JSON.stringify(ids)
+            body: 'archivos_ids=' + encodeURIComponent(JSON.stringify(ids))
         })
-        .then(response => response.json())
+        .then(handleFetchResponse)
         .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
+            if (data && data.redirect_url) {
+                window.location.href = data.redirect_url;
+                return data;
             }
+            Swal.close();
+            if (data && data.success) {
+                Swal.fire({ icon: 'success', title: 'Eliminado', text: data.message || 'Eliminación completada' }).then(() => location.reload());
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: (data && data.error) ? data.error : 'Respuesta inválida' });
+            }
+            return data;
         })
         .catch(error => {
+            Swal.close();
             console.error('Error:', error);
-            alert('Error al eliminar los expedientes');
+            Swal.fire({ icon: 'error', title: 'Error al eliminar', text: (error.message || error) });
+            return { success: false, error: error.message || error };
         });
     }
 
     function restaurarExpediente(idArchivo) {
-        if (confirm('¿Está seguro que desea restaurar este expediente?')) {
+        Swal.fire({
+            title: 'Restaurar expediente',
+            text: '¿Está seguro que desea restaurar este expediente?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, restaurar',
+            cancelButtonText: 'Cancelar'
+        }).then(result => {
+            if (!result.isConfirmed) return;
+
+            // Preferir cookie CSRF cuando esté disponible (Django por defecto)
+            let csrfToken = getCookie('csrftoken') || "{{ csrf_token }}";
+
+            Swal.fire({ title: 'Restaurando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
             fetch("{% url 'restaurar_expediente' %}", {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': '{{ csrf_token }}'
+                    'X-CSRFToken': csrfToken
                 },
-                body: 'id_archivo=' + idArchivo
+                body: 'id_archivo=' + encodeURIComponent(idArchivo)
             })
-            .then(response => response.json())
+            .then(handleFetchResponse)
             .then(data => {
-                if (data.success) {
-                    alert(data.message);
-                    location.reload();
+                if (data && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return data;
+                }
+                Swal.close();
+                if (data && data.success) {
+                    Swal.fire({ icon: 'success', title: 'Restaurado', text: data.message || 'Expediente restaurado' }).then(() => location.reload());
                 } else {
-                    alert('Error: ' + data.error);
+                    Swal.fire({ icon: 'error', title: 'Error', text: (data && data.error) ? data.error : 'Respuesta inválida' });
                 }
             })
             .catch(error => {
+                Swal.close();
                 console.error('Error:', error);
-                alert('Error al restaurar el expediente');
+                Swal.fire({ icon: 'error', title: 'Error al restaurar', text: (error.message || error) });
             });
-        }
+        });
     }
 </script>
 {% endblock %}

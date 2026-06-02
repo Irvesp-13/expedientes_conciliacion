@@ -54,11 +54,20 @@
                                         style="padding: 4px 8px; font-size: 0.8rem;">
                                         <i class="fas fa-eye"></i>
                                     </a>
+                                    {% if empleado.es_administrador %}
                                     <a href="{% url 'editar_expediente' expediente.id %}"
                                         class="btn btn-agregar btn-xs" title="Editar expediente"
                                         style="padding: 4px 8px; font-size: 0.8rem;">
                                         <i class="fas fa-edit"></i>
                                     </a>
+                                    {% endif %}
+                                    {% if empleado.puede_archivar_expedientes %}
+                                    <button class="btn btn-secondary btn-xs" title="Archivar expediente"
+                                        onclick="abrirModalArchivoMultiple('{{ expediente.id }}'); return false;"
+                                        style="padding: 4px 8px; font-size: 0.8rem;">
+                                        <i class="fas fa-archive"></i>
+                                    </button>
+                                    {% endif %}
                                     <button class="btn btn-agregar btn-xs" title="Cargar expediente"
                                         onclick="abrirModalCarga('{{ expediente.id }}', '{{ expediente.letra }} {{ expediente.exp }}/{{ expediente.anio }}')"
                                         style="padding: 4px 8px; font-size: 0.8rem;">
@@ -100,8 +109,28 @@
                         <input type="text" class="form-control" value="{% now 'Y-m-d H:i' %}" readonly>
                     </div>
                     <div class="mb-3">
-                        <label>Nombre de quien recibe:</label>
-                        <input type="text" class="form-control" name="nombre_carga" required>
+                        <label for="tipo_recepcion">Tipo de receptor:</label>
+                        <select class="form-control" id="tipo_recepcion" name="tipo_recepcion">
+                            <option value="usuario">Usuario del sistema</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="contenedorUsuariosSistema">
+                        <label for="searchUsuarioCarga">Buscar usuario:</label>
+                        <input type="text" id="searchUsuarioCarga" class="form-control" placeholder="Escribe para filtrar usuarios...">
+                        <label for="nombre_carga" class="mt-2">Usuario que recibe:</label>
+                        <select class="form-control" id="nombre_carga" name="nombre_carga" required size="6">
+                            <option value="">Seleccione un usuario</option>
+                            {% for usuario in empleados_carga %}
+                            <option value="{{ usuario.id }}">{{ usuario.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="contenedorOtroCarga">
+                        <label for="nombre_carga_otro">Nombre de quien recibe:</label>
+                        <input type="text" class="form-control" id="nombre_carga_otro" name="nombre_carga_otro" placeholder="Nombre completo del receptor">
+                        <label for="junta_carga" class="mt-2">Junta a la que pertenece:</label>
+                        <input type="text" class="form-control" id="junta_carga" name="junta_carga" placeholder="Nombre de la junta">
                     </div>
                 </form>
             </div>
@@ -178,23 +207,142 @@
     </div>
 </div>
 
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     let myModal;
     let modalArchivo;
     let expedientesData = [];
     let expedientesSeleccionados = [];
+    const usuariosCarga = [
+        {% for usuario in empleados_carga %}
+        { id: '{{ usuario.id }}', nombre: '{{ usuario.nombre|escapejs }}' }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    ];
+
+    function renderUsuariosCarga(filtro = '') {
+        const select = document.getElementById('nombre_carga');
+        if (!select) return;
+
+        const valorAnterior = select.value;
+        const filtroNormalizado = (filtro || '').trim().toLowerCase();
+        const usuariosFiltrados = usuariosCarga.filter(usuario =>
+            usuario.nombre.toLowerCase().includes(filtroNormalizado)
+        );
+
+        select.innerHTML = '<option value="">Seleccione un usuario</option>';
+
+        if (usuariosFiltrados.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No se encontraron usuarios';
+            option.disabled = true;
+            select.appendChild(option);
+            return;
+        }
+
+        usuariosFiltrados.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.id;
+            option.textContent = usuario.nombre;
+            if (usuario.id === valorAnterior) {
+                option.selected = true;
+            }
+            select.appendChild(option);
+        });
+    }
+
+    function toggleTipoRecepcion() {
+        const tipoRecepcion = document.getElementById('tipo_recepcion');
+        const contenedorUsuariosSistema = document.getElementById('contenedorUsuariosSistema');
+        const contenedorOtroCarga = document.getElementById('contenedorOtroCarga');
+        const selectUsuario = document.getElementById('nombre_carga');
+        const inputNombreOtro = document.getElementById('nombre_carga_otro');
+        const inputJunta = document.getElementById('junta_carga');
+
+        if (!tipoRecepcion || !contenedorUsuariosSistema || !contenedorOtroCarga) {
+            return;
+        }
+
+        const esOtro = tipoRecepcion.value === 'otro';
+        contenedorUsuariosSistema.classList.toggle('d-none', esOtro);
+        contenedorOtroCarga.classList.toggle('d-none', !esOtro);
+
+        if (selectUsuario) {
+            selectUsuario.required = !esOtro;
+        }
+        if (inputNombreOtro) {
+            inputNombreOtro.required = esOtro;
+        }
+        if (inputJunta) {
+            inputJunta.required = esOtro;
+        }
+    }
 
     function abrirModalCarga(id, numero) {
+        if (!myModal) {
+            myModal = new bootstrap.Modal(document.getElementById('modalCarga'));
+        }
+
         document.getElementById('expediente_id').value = id;
         document.getElementById('numero_expediente').value = numero;
-        myModal = new bootstrap.Modal(document.getElementById('modalCarga'));
+        document.getElementById('tipo_recepcion').value = 'usuario';
+        document.getElementById('searchUsuarioCarga').value = '';
+        renderUsuariosCarga('');
+        document.getElementById('nombre_carga').value = '';
+        document.getElementById('nombre_carga_otro').value = '';
+        document.getElementById('junta_carga').value = '';
+        toggleTipoRecepcion();
+
         myModal.show();
+
+        setTimeout(() => {
+            const searchInput = document.getElementById('searchUsuarioCarga');
+            if (searchInput) searchInput.focus();
+        }, 150);
     }
 
     function guardarCarga() {
         const form = document.getElementById('formCarga');
         const formData = new FormData(form);
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const tipoRecepcion = formData.get('tipo_recepcion') || 'usuario';
+
+        if (tipoRecepcion === 'usuario') {
+            const nombreCarga = formData.get('nombre_carga');
+            if (!nombreCarga || !String(nombreCarga).trim()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Falta el usuario',
+                    text: 'Por favor, selecciona el usuario que recibe.'
+                });
+                return;
+            }
+        } else {
+            const nombreCargaOtro = formData.get('nombre_carga_otro');
+            const juntaCarga = formData.get('junta_carga');
+            if (!nombreCargaOtro || !String(nombreCargaOtro).trim() || !juntaCarga || !String(juntaCarga).trim()) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Faltan datos',
+                    text: 'Completa el nombre y la junta del receptor.'
+                });
+                return;
+            }
+        }
+
+        const btnGuardarCarga = document.querySelector('#modalCarga .btn-primary');
+        if (btnGuardarCarga) {
+            btnGuardarCarga.disabled = true;
+            btnGuardarCarga.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Cargando...';
+        }
+
+        Swal.fire({
+            title: 'Registrando carga...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
 
         fetch('{% url "cargar_expediente" %}', {
             method: 'POST',
@@ -205,17 +353,40 @@
         })
             .then(response => response.json())
             .then(data => {
+                if (data && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
                 if (data.success) {
-                    alert('Carga registrada correctamente');
-                    cerrarModalCarga();
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Carga registrada',
+                        text: data.message || 'Carga registrada correctamente'
+                    }).then(() => {
+                        cerrarModalCarga();
+                        location.reload();
+                    });
                 } else {
-                    alert('Error al registrar la carga: ' + data.error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al registrar la carga',
+                        text: data.error || 'Error desconocido'
+                    });
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error al procesar la solicitud');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al procesar la solicitud',
+                    text: 'Por favor, inténtelo de nuevo.'
+                });
+            })
+            .finally(() => {
+                if (btnGuardarCarga) {
+                    btnGuardarCarga.disabled = false;
+                    btnGuardarCarga.innerHTML = 'Cargar';
+                }
             });
     }
 
@@ -227,15 +398,20 @@
         document.getElementById('formCarga').reset();
         document.getElementById('expediente_id').value = '';
         document.getElementById('numero_expediente').value = '';
+        renderUsuariosCarga('');
+        toggleTipoRecepcion();
     }
 
     // Funciones para el modal de archivo múltiple
-    function abrirModalArchivoMultiple() {
+    function abrirModalArchivoMultiple(expedienteId = null) {
         modalArchivo = new bootstrap.Modal(document.getElementById('modalArchivo'));
         modalArchivo.show();
         cargarExpedientes();
         // Limpiar datos previos
         expedientesSeleccionados = [];
+        if (expedienteId !== null && expedienteId !== undefined && expedienteId !== '') {
+            expedientesSeleccionados = [String(expedienteId)];
+        }
         actualizarContador();
         document.querySelector('textarea[name="motivo"]').value = '';
         document.getElementById('searchExpedientesArchivo').value = '';
@@ -267,6 +443,10 @@
         })
             .then(response => response.json())
             .then(data => {
+                if (data && data.redirect_url) {
+                    window.location.href = data.redirect_url;
+                    return;
+                }
                 if (data.success) {
                     expedientesData = data.expedientes;
                     mostrarExpedientes(expedientesData);
@@ -309,6 +489,15 @@
         });
 
         lista.innerHTML = html;
+
+        expedientesSeleccionados.forEach(id => {
+            const checkbox = document.getElementById(`exp_${id}`);
+            if (checkbox) {
+                checkbox.checked = true;
+            }
+        });
+
+        actualizarContador();
     }
 
     function filtrarExpedientes() {
@@ -369,69 +558,126 @@
 
     function archivarExpedientesSeleccionados() {
         if (expedientesSeleccionados.length === 0) {
-            alert('Por favor, selecciona al menos un expediente para archivar');
+            Swal.fire({
+                icon: 'warning',
+                title: 'Selecciona expedientes',
+                text: 'Por favor, selecciona al menos un expediente para archivar'
+            });
             return;
         }
 
         const motivo = document.querySelector('textarea[name="motivo"]').value;
         if (!motivo.trim()) {
-            alert('Por favor, ingresa el motivo del archivo');
-            return;
-        }
-
-        if (!confirm(`¿Estás seguro de que deseas archivar ${expedientesSeleccionados.length} expediente(s)?`)) {
-            return;
-        }
-
-        const formData = new FormData();
-        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-        expedientesSeleccionados.forEach(id => {
-            formData.append('expedientes_ids[]', id);
-        });
-        formData.append('motivo', motivo);
-
-        // Deshabilitar botón mientras se procesa
-        const btnArchivar = document.getElementById('btnArchivar');
-        btnArchivar.disabled = true;
-        btnArchivar.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Archivando...';
-
-        fetch('{% url "archivar_expediente" %}', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrftoken,
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            credentials: 'same-origin',
-            body: formData
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    alert(data.message || 'Expedientes archivados correctamente');
-                    cerrarModalArchivo();
-                    location.reload();
-                } else {
-                    alert('Error al archivar expedientes: ' + (data.error || 'Error desconocido'));
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al procesar la solicitud. Por favor, inténtelo de nuevo.');
-            })
-            .finally(() => {
-                btnArchivar.disabled = false;
-                btnArchivar.innerHTML = 'Archivar Expedientes';
+            Swal.fire({
+                icon: 'warning',
+                title: 'Falta el motivo',
+                text: 'Por favor, ingresa el motivo del archivo'
             });
+            return;
+        }
+
+        Swal.fire({
+            icon: 'question',
+            title: 'Archivar expedientes',
+            text: `¿Estás seguro de que deseas archivar ${expedientesSeleccionados.length} expediente(s)?`,
+            showCancelButton: true,
+            confirmButtonText: 'Sí, archivar',
+            cancelButtonText: 'Cancelar'
+        }).then(result => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            const formData = new FormData();
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            expedientesSeleccionados.forEach(id => {
+                formData.append('expedientes_ids[]', id);
+            });
+            formData.append('motivo', motivo);
+
+            // Deshabilitar botón mientras se procesa
+            const btnArchivar = document.getElementById('btnArchivar');
+            btnArchivar.disabled = true;
+            btnArchivar.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Archivando...';
+
+            Swal.fire({
+                title: 'Archivando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            fetch('{% url "archivar_expediente" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrftoken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: formData
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data && data.redirect_url) {
+                        window.location.href = data.redirect_url;
+                        return;
+                    }
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Archivado correctamente',
+                            text: data.message || 'Expedientes archivados correctamente'
+                        }).then(() => {
+                            cerrarModalArchivo();
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al archivar',
+                            text: data.error || 'Error desconocido'
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error al procesar la solicitud',
+                        text: 'Por favor, inténtelo de nuevo.'
+                    });
+                })
+                .finally(() => {
+                    btnArchivar.disabled = false;
+                    btnArchivar.innerHTML = 'Archivar Expedientes';
+                });
+        });
     }
 
     // Event listener para el buscador
     document.addEventListener('DOMContentLoaded', function () {
+        myModal = new bootstrap.Modal(document.getElementById('modalCarga'));
+
+        const searchUsuarioCarga = document.getElementById('searchUsuarioCarga');
+        if (searchUsuarioCarga) {
+            searchUsuarioCarga.addEventListener('input', function () {
+                renderUsuariosCarga(this.value);
+            });
+        }
+
+        const tipoRecepcion = document.getElementById('tipo_recepcion');
+        if (tipoRecepcion) {
+            tipoRecepcion.addEventListener('change', toggleTipoRecepcion);
+        }
+
+        renderUsuariosCarga('');
+        toggleTipoRecepcion();
+
         const searchInput = document.getElementById('searchExpedientesArchivo');
         if (searchInput) {
             searchInput.addEventListener('keyup', filtrarExpedientes);

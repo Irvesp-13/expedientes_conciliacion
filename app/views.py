@@ -7,9 +7,11 @@ from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from .models import CargaDescarga
 from django.contrib.auth.decorators import login_required
+from django.urls import reverse
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from datetime import datetime
+from urllib.parse import quote
 
 
 def registrar_accion(empleado, accion, descripcion, request=None):
@@ -30,6 +32,16 @@ def registrar_accion(empleado, accion, descripcion, request=None):
         descripcion=descripcion,
         ip_address=ip_address
     )
+
+
+def redirigir_a_error(mensaje):
+    return redirect(f"{reverse('error')}?mensaje={quote(mensaje)}")
+
+
+def error(request):
+    mensajes = [str(message) for message in messages.get_messages(request)]
+    mensaje = request.GET.get('mensaje') or (mensajes[0] if mensajes else 'No tienes permiso para acceder a esta página.')
+    return render(request, 'error.html', {'mensaje': mensaje})
 
 
 def formatear_identificador_expediente(expediente):
@@ -135,6 +147,13 @@ def obtener_campos_exportables_expediente():
     return [(campo, etiquetas.get(campo, campo.replace('_', ' ').upper())) for campo in campos]
 
 
+def obtener_etiqueta_puesto(puesto):
+    try:
+        return Empleado.Puesto(int(puesto)).label
+    except (TypeError, ValueError):
+        return 'Puesto desconocido'
+
+
 def iniciar_sesion(request):
     if request.method == 'POST':
         nombre = request.POST['nombre']
@@ -168,10 +187,12 @@ def bienvenida(request):
     
     # Obtener registros de la tabla expedientes
     expedientes = ConciliacionExpedientes.objects.all()
+    empleados_carga = Empleado.objects.exclude(pk=empleado.id).order_by('nombre')
     
     return render(request, 'bienvenida.html', {
         'empleado': empleado,
         'expedientes': expedientes,
+        'empleados_carga': empleados_carga,
     })
 
 
@@ -197,6 +218,9 @@ def agregar_expediente(request):
         return redirect('iniciar_sesion')
     
     empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.es_administrador():
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
     
     if request.method == 'POST':
         # Get the last id_expediente and increment it
@@ -308,9 +332,9 @@ def crear_empleado(request):
     if not empleado_id:
         return redirect('iniciar_sesion')
     empleado = Empleado.objects.get(id=empleado_id)
-    if not empleado.es_administrador():
+    if not empleado.puede_gestionar_usuarios():
         messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
@@ -327,7 +351,7 @@ def crear_empleado(request):
                 )
                 
                 # Registrar en bitácora
-                tipo_puesto = 'Administrador' if int(puesto) == 1 else 'Usuario normal'
+                tipo_puesto = obtener_etiqueta_puesto(puesto)
                 registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
                 
                 messages.success(request, 'Empleado creado exitosamente.')
@@ -336,7 +360,10 @@ def crear_empleado(request):
             messages.error(request, 'Todos los campos son obligatorios.')
 
     empleados = Empleado.objects.all()
-    return render(request, 'crear_empleado.html', {'empleados': empleados})
+    return render(request, 'crear_empleado.html', {
+        'empleados': empleados,
+        'puestos': Empleado.Puesto.choices,
+    })
 
 def ver_expediente(request, id_expediente):
     if not request.session.get('empleado_id'):
@@ -356,7 +383,7 @@ def editar_expediente(request, id_expediente):
     empleado = Empleado.objects.get(id=request.session['empleado_id'])
     if not empleado.es_administrador():
         messages.error(request, 'No tienes permiso para realizar esta acción.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para realizar esta acción.')
 
     try:
         expediente = get_object_or_404(ConciliacionExpedientes, pk=id_expediente)
@@ -470,9 +497,9 @@ def crear_empleado(request):
     if not empleado_id:
         return redirect('iniciar_sesion')
     empleado = Empleado.objects.get(id=empleado_id)
-    if not empleado.es_administrador():
+    if not empleado.puede_gestionar_usuarios():
         messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     if request.method == 'POST':
         nombre = request.POST.get('nombre')
@@ -489,7 +516,7 @@ def crear_empleado(request):
                 )
                 
                 # Registrar en bitácora
-                tipo_puesto = 'Administrador' if int(puesto) == 1 else 'Usuario normal'
+                tipo_puesto = obtener_etiqueta_puesto(puesto)
                 registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
                 
                 messages.success(request, 'Empleado creado exitosamente.')
@@ -498,7 +525,10 @@ def crear_empleado(request):
             messages.error(request, 'Todos los campos son obligatorios.')
 
     empleados = Empleado.objects.all()
-    return render(request, 'crear_empleado.html', {'empleados': empleados})
+    return render(request, 'crear_empleado.html', {
+        'empleados': empleados,
+        'puestos': Empleado.Puesto.choices,
+    })
 
 
 def eliminar_expediente(request, id_expediente):
@@ -509,7 +539,7 @@ def eliminar_expediente(request, id_expediente):
     empleado = Empleado.objects.get(id=empleado_id)
     if not empleado.es_administrador():
         messages.error(request, 'No tienes permiso para eliminar expedientes.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para eliminar expedientes.')
     
     try:
         expediente = ConciliacionExpedientes.objects.get(pk=id_expediente)
@@ -526,9 +556,9 @@ def editar_empleado(request, id):
     if not empleado_id:
         return redirect('iniciar_sesion')
     admin = Empleado.objects.get(id=empleado_id)
-    if not admin.es_administrador():
+    if not admin.puede_gestionar_usuarios():
         messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     empleado_edit = Empleado.objects.get(id=id)
     if request.method == 'POST':
@@ -538,21 +568,24 @@ def editar_empleado(request, id):
         empleado_edit.save()
         
         # Registrar en bitácora
-        tipo_puesto = 'Administrador' if int(empleado_edit.puesto) == 1 else 'Usuario normal'
+        tipo_puesto = obtener_etiqueta_puesto(empleado_edit.puesto)
         registrar_accion(admin, 'Editar empleado', f'Editó el empleado {empleado_edit.nombre} (Clave: {empleado_edit.clave_empleado}) - Puesto: {tipo_puesto}', request)
         
         messages.success(request, 'Empleado actualizado correctamente.')
         return redirect('crear_empleado')
-    return render(request, 'editar_empleado.html', {'empleado': empleado_edit})
+    return render(request, 'editar_empleado.html', {
+        'empleado': empleado_edit,
+        'puestos': Empleado.Puesto.choices,
+    })
 
 def eliminar_empleado(request, id):
     empleado_id = request.session.get('empleado_id')
     if not empleado_id:
         return redirect('iniciar_sesion')
     admin = Empleado.objects.get(id=empleado_id)
-    if not admin.es_administrador():
+    if not admin.puede_gestionar_usuarios():
         messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     # Prevent self-deletion
     if int(id) == int(empleado_id):
@@ -576,7 +609,10 @@ def cargar_expediente(request):
     if request.method == 'POST':
         empleado_id = request.session.get('empleado_id')
         expediente_id = request.POST.get('expediente_id')
+        tipo_recepcion = request.POST.get('tipo_recepcion', 'usuario')
         nombre_carga = request.POST.get('nombre_carga', '').strip()
+        nombre_carga_otro = request.POST.get('nombre_carga_otro', '').strip()
+        junta_carga = request.POST.get('junta_carga', '').strip()
 
         if not empleado_id:
             return JsonResponse({'success': False, 'error': 'Sesión no iniciada'})
@@ -584,22 +620,51 @@ def cargar_expediente(request):
         if not expediente_id:
             return JsonResponse({'success': False, 'error': 'No se proporcionó el expediente'})
 
-        if not nombre_carga:
-            return JsonResponse({'success': False, 'error': 'El nombre de carga es obligatorio'})
+        if tipo_recepcion == 'usuario' and not nombre_carga:
+            return JsonResponse({'success': False, 'error': 'Debes seleccionar un usuario'})
+
+        if tipo_recepcion == 'otro' and (not nombre_carga_otro or not junta_carga):
+            return JsonResponse({'success': False, 'error': 'Debes completar el nombre y la junta del receptor'})
 
         try:
             empleado = Empleado.objects.get(id=empleado_id)
+            if not empleado.puede_cargar_expedientes():
+                mensaje = 'No tienes permisos para realizar esta acción'
+                return JsonResponse({
+                    'success': False,
+                    'error': mensaje,
+                    'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
+                }, status=403)
             expediente = ConciliacionExpedientes.objects.get(pk=expediente_id)
+
+            nombre_carga_guardar = ''
+            junta_carga_guardar = ''
+
+            if tipo_recepcion == 'usuario':
+                try:
+                    empleado_receptor = Empleado.objects.get(pk=int(nombre_carga))
+                except (ValueError, TypeError, Empleado.DoesNotExist):
+                    return JsonResponse({'success': False, 'error': 'Debes seleccionar un usuario válido'})
+
+                if int(empleado_receptor.id) == int(empleado.id):
+                    return JsonResponse({'success': False, 'error': 'No puedes cargar un expediente a tu propio usuario'})
+
+                nombre_carga_guardar = empleado_receptor.nombre
+            else:
+                nombre_carga_guardar = nombre_carga_otro
+                junta_carga_guardar = junta_carga
+
             carga = CargaDescarga.objects.create(
                 empleado=empleado,
                 expediente=expediente,
-                nombre_carga=nombre_carga,
+                nombre_carga=nombre_carga_guardar,
+                junta_carga=junta_carga_guardar,
             )
 
             registrar_accion(
                 empleado,
                 'Cargar expediente',
-                f'Cargó el expediente {formatear_identificador_expediente(expediente)} - {nombre_carga}',
+                f'Cargó el expediente {formatear_identificador_expediente(expediente)} - {nombre_carga_guardar}' + (f' - Junta: {junta_carga_guardar}' if junta_carga_guardar else ''),
                 request,
             )
 
@@ -619,6 +684,9 @@ def ver_cargas(request):
         return redirect('iniciar_sesion')
     
     empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_cargar_expedientes():
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
     
     cargas = CargaDescarga.objects.select_related('empleado', 'expediente').all().order_by('-fecha')
     return render(request, 'ver_cargas.html', {'cargas': cargas})
@@ -631,6 +699,13 @@ def archivar_expediente(request):
         return JsonResponse({'success': False, 'error': 'Sesión no iniciada'})
     
     empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_archivar_expedientes():
+        mensaje = 'No tienes permisos para realizar esta acción'
+        return JsonResponse({
+            'success': False,
+            'error': mensaje,
+            'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
+        }, status=403)
 
     if request.method == 'POST':
         try:
@@ -681,6 +756,13 @@ def obtener_expedientes_ajax(request):
         return JsonResponse({'success': False, 'error': 'Sesión no iniciada'})
     
     empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_archivar_expedientes():
+        mensaje = 'No tienes permisos para realizar esta acción'
+        return JsonResponse({
+            'success': False,
+            'error': mensaje,
+            'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
+        }, status=403)
     
     expedientes = ConciliacionExpedientes.objects.all()
     expedientes_list = [
@@ -703,6 +785,9 @@ def ver_archivados(request):
         return redirect('iniciar_sesion')
     
     empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_archivar_expedientes():
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
     
     archivados = Archivados.objects.all().order_by('-fecha_archivo')
     return render(request, 'ver_archivados.html', {'archivados': archivados, 'empleado': empleado})
@@ -713,6 +798,11 @@ def exportar_expedientes_excel(request):
     if not empleado_id:
         messages.error(request, 'Debes iniciar sesión')
         return redirect('iniciar_sesion')
+
+    empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_exportar_expedientes():
+        messages.error(request, 'No tienes permiso para exportar expedientes.')
+        return redirigir_a_error('No tienes permiso para exportar expedientes.')
     
     # Obtener todos los expedientes de la tabla principal
     expedientes = ConciliacionExpedientes.objects.all()
@@ -766,9 +856,9 @@ def ver_bitacora(request):
         return redirect('iniciar_sesion')
     
     empleado = Empleado.objects.get(id=empleado_id)
-    if not empleado.es_administrador():
+    if not empleado.puede_ver_bitacora():
         messages.error(request, 'No tienes permisos para ver la bitácora.')
-        return redirect('bienvenida')
+        return redirigir_a_error('No tienes permisos para ver la bitácora.')
     
     # Obtener parámetros de filtro
     filtro_empleado = request.GET.get('empleado', '')
@@ -809,6 +899,13 @@ def restaurar_expediente(request):
     
     try:
         empleado = Empleado.objects.get(id=empleado_id)
+        if not empleado.puede_archivar_expedientes():
+            mensaje = 'No tienes permisos para realizar esta acción'
+            return JsonResponse({
+                'success': False,
+                'error': mensaje,
+                'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
+            }, status=403)
         id_archivo = request.POST.get('id_archivo')
         
         if not id_archivo:
@@ -871,8 +968,13 @@ def eliminar_permanente(request):
         empleado = Empleado.objects.get(id=empleado_id)
         
         # Verificar que sea administrador
-        if not empleado.es_administrador():
-            return JsonResponse({'success': False, 'error': 'No tienes permisos para realizar esta acción'})
+        if not empleado.puede_gestionar_usuarios():
+            mensaje = 'No tienes permisos para realizar esta acción'
+            return JsonResponse({
+                'success': False,
+                'error': mensaje,
+                'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
+            }, status=403)
         
         import json
         archivos_ids = json.loads(request.POST.get('archivos_ids', '[]'))

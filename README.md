@@ -72,6 +72,14 @@ El servidor estará disponible en: **http://localhost:8000**
 - **Sitio**: http://localhost:8000
 - **Panel de Admin**: http://localhost:8000/admin
 
+## Roles de Usuario
+
+El sistema maneja únicamente estos tres roles:
+
+- **Administrador**: acceso a todas las funciones del sistema.
+- **Empleado A**: acceso a la carga de expedientes y al archivado de expedientes.
+- **Empleado B**: acceso únicamente a la carga de expedientes.
+
 ## Comandos Útiles
 
 ### Crear migraciones

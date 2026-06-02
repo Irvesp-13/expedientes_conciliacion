@@ -1,15 +1,48 @@
 from django.db import models
 
 class Empleado(models.Model):
+    class Puesto(models.IntegerChoices):
+        ADMINISTRADOR = 1, 'Administrador'
+        EMPLEADO_A = 2, 'Empleado A'
+        EMPLEADO_B = 3, 'Empleado B'
+
     nombre = models.CharField(max_length=100)
     clave_empleado = models.CharField(max_length=20, unique=True)
-    puesto = models.IntegerField()  # 1: Administrador, 2: Usuario normal
+    puesto = models.PositiveSmallIntegerField(choices=Puesto.choices)
 
     def __str__(self):
         return self.nombre
 
     def es_administrador(self):
-        return self.puesto == 1
+        return self.puesto == self.Puesto.ADMINISTRADOR
+
+    def es_empleado_a(self):
+        return self.puesto == self.Puesto.EMPLEADO_A
+
+    def es_empleado_b(self):
+        return self.puesto == self.Puesto.EMPLEADO_B
+
+    def puede_cargar_expedientes(self):
+        return self.puesto in {
+            self.Puesto.ADMINISTRADOR,
+            self.Puesto.EMPLEADO_A,
+            self.Puesto.EMPLEADO_B,
+        }
+
+    def puede_archivar_expedientes(self):
+        return self.puesto in {
+            self.Puesto.ADMINISTRADOR,
+            self.Puesto.EMPLEADO_A,
+        }
+
+    def puede_gestionar_usuarios(self):
+        return self.es_administrador()
+
+    def puede_ver_bitacora(self):
+        return self.es_administrador()
+
+    def puede_exportar_expedientes(self):
+        return self.es_administrador()
 
 class ConciliacionExpedientes(models.Model):
     id = models.AutoField(primary_key=True)
@@ -110,6 +143,7 @@ class CargaDescarga(models.Model):
     expediente = models.ForeignKey(ConciliacionExpedientes, on_delete=models.CASCADE)
     fecha = models.DateTimeField(auto_now_add=True)
     nombre_carga = models.CharField(max_length=255)
+    junta_carga = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         db_table = 'cargadescarga'
