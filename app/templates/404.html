@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Página no encontrada{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: calc(100vh - 140px);">
+    <div class="col-lg-7 col-md-9">
+        <div class="card shadow text-center">
+            <div class="card-header bg-danger text-white">
+                <h3 class="card-title mb-0">Error 404</h3>
+            </div>
+            <div class="card-body py-5 px-4">
+                <div class="display-1 font-weight-bold text-danger mb-3">404</div>
+                <h4 class="mb-3">La página que buscas no existe</h4>
+                <p class="text-muted mb-4">
+                    Puede que la dirección esté mal escrita, que la página haya sido movida o que ya no esté disponible.
+                </p>
+                <a href="{% url 'bienvenida' %}" class="btn btn-agregar btn-lg">
+                    <i class="fas fa-home"></i> Volver al inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

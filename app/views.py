@@ -44,6 +44,10 @@ def error(request):
     return render(request, 'error.html', {'mensaje': mensaje})
 
 
+def pagina_no_encontrada(request, exception=None):
+    return render(request, '404.html', status=404)
+
+
 def formatear_identificador_expediente(expediente):
     partes = [expediente.letra, expediente.exp, str(expediente.anio) if expediente.anio is not None else None]
     identificador = ' '.join(parte for parte in partes if parte)
