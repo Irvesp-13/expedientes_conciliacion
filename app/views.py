@@ -151,27 +151,27 @@ def obtener_campos_exportables_expediente():
     return [(campo, etiquetas.get(campo, campo.replace('_', ' ').upper())) for campo in campos]
 
 
-def obtener_etiqueta_puesto(puesto):
+def obtener_etiqueta_rol(rol):
     try:
-        return Empleado.Puesto(int(puesto)).label
+        return Empleado.Rol(int(rol)).label
     except (TypeError, ValueError):
-        return 'Puesto desconocido'
+        return 'Rol desconocido'
 
 
 def iniciar_sesion(request):
     if request.method == 'POST':
-        nombre = request.POST['nombre']
+        usuario = request.POST['usuario']
         clave_empleado = request.POST['clave_empleado']
         
         try:
-            # Buscar al empleado por su clave de empleado y nombre
-            empleado = Empleado.objects.get(clave_empleado=clave_empleado, nombre=nombre)
+            # Buscar al empleado por su usuario y clave de empleado
+            empleado = Empleado.objects.get(usuario=usuario, clave_empleado=clave_empleado)
             
             # Guardar el ID del empleado en la sesión
             request.session['empleado_id'] = empleado.id
             
             # Registrar en bitácora
-            registrar_accion(empleado, 'Inicio de sesión', f'El usuario {empleado.nombre} inició sesión', request)
+            registrar_accion(empleado, 'Inicio de sesión', f'El usuario {empleado.usuario} inició sesión', request)
             
             return redirect('bienvenida')
         except Empleado.DoesNotExist:
@@ -341,22 +341,28 @@ def crear_empleado(request):
         return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     if request.method == 'POST':
+        usuario = request.POST.get('usuario')
         nombre = request.POST.get('nombre')
         clave_empleado = request.POST.get('clave_empleado')
-        puesto = request.POST.get('puesto')
-        if nombre and clave_empleado and puesto:
+        rol = request.POST.get('rol')
+        id_plaza = request.POST.get('id_plaza', '')
+        puesto = request.POST.get('puesto', '')
+        if usuario and nombre and clave_empleado and rol:
             if Empleado.objects.filter(clave_empleado=clave_empleado).exists():
                 messages.error(request, 'La clave de empleado ya existe.')
             else:
                 nuevo_empleado = Empleado.objects.create(
+                    usuario=usuario,
                     nombre=nombre,
                     clave_empleado=clave_empleado,
+                    rol=rol,
+                    id_plaza=id_plaza,
                     puesto=puesto
                 )
                 
                 # Registrar en bitácora
-                tipo_puesto = obtener_etiqueta_puesto(puesto)
-                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
+                tipo_rol = obtener_etiqueta_rol(rol)
+                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_rol}', request)
                 
                 messages.success(request, 'Empleado creado exitosamente.')
                 return redirect('crear_empleado')
@@ -366,7 +372,7 @@ def crear_empleado(request):
     empleados = Empleado.objects.all()
     return render(request, 'crear_empleado.html', {
         'empleados': empleados,
-        'puestos': Empleado.Puesto.choices,
+        'roles': Empleado.Rol.choices,
     })
 
 def ver_expediente(request, id_expediente):
@@ -496,45 +502,6 @@ def editar_expediente(request, id_expediente):
         return redirect('bienvenida')
 
 
-def crear_empleado(request):
-    empleado_id = request.session.get('empleado_id')
-    if not empleado_id:
-        return redirect('iniciar_sesion')
-    empleado = Empleado.objects.get(id=empleado_id)
-    if not empleado.puede_gestionar_usuarios():
-        messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirigir_a_error('No tienes permiso para acceder a esta página.')
-
-    if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        clave_empleado = request.POST.get('clave_empleado')
-        puesto = request.POST.get('puesto')
-        if nombre and clave_empleado and puesto:
-            if Empleado.objects.filter(clave_empleado=clave_empleado).exists():
-                messages.error(request, 'La clave de empleado ya existe.')
-            else:
-                nuevo_empleado = Empleado.objects.create(
-                    nombre=nombre,
-                    clave_empleado=clave_empleado,
-                    puesto=puesto
-                )
-                
-                # Registrar en bitácora
-                tipo_puesto = obtener_etiqueta_puesto(puesto)
-                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
-                
-                messages.success(request, 'Empleado creado exitosamente.')
-                return redirect('crear_empleado')
-        else:
-            messages.error(request, 'Todos los campos son obligatorios.')
-
-    empleados = Empleado.objects.all()
-    return render(request, 'crear_empleado.html', {
-        'empleados': empleados,
-        'puestos': Empleado.Puesto.choices,
-    })
-
-
 def eliminar_expediente(request, id_expediente):
     empleado_id = request.session.get('empleado_id')
     if not empleado_id:
@@ -566,20 +533,23 @@ def editar_empleado(request, id):
 
     empleado_edit = Empleado.objects.get(id=id)
     if request.method == 'POST':
+        empleado_edit.usuario = request.POST.get('usuario')
         empleado_edit.nombre = request.POST.get('nombre')
         empleado_edit.clave_empleado = request.POST.get('clave_empleado')
-        empleado_edit.puesto = request.POST.get('puesto')
+        empleado_edit.rol = request.POST.get('rol')
+        empleado_edit.id_plaza = request.POST.get('id_plaza', '')
+        empleado_edit.puesto = request.POST.get('puesto', '')
         empleado_edit.save()
         
         # Registrar en bitácora
-        tipo_puesto = obtener_etiqueta_puesto(empleado_edit.puesto)
-        registrar_accion(admin, 'Editar empleado', f'Editó el empleado {empleado_edit.nombre} (Clave: {empleado_edit.clave_empleado}) - Puesto: {tipo_puesto}', request)
+        tipo_rol = obtener_etiqueta_rol(empleado_edit.rol)
+        registrar_accion(admin, 'Editar empleado', f'Editó el empleado {empleado_edit.nombre} (Clave: {empleado_edit.clave_empleado}) - Rol: {tipo_rol}', request)
         
         messages.success(request, 'Empleado actualizado correctamente.')
         return redirect('crear_empleado')
     return render(request, 'editar_empleado.html', {
         'empleado': empleado_edit,
-        'puestos': Empleado.Puesto.choices,
+        'roles': Empleado.Rol.choices,
     })
 
 def eliminar_empleado(request, id):

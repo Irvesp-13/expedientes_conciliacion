@@ -1,38 +1,41 @@
 from django.db import models
 
 class Empleado(models.Model):
-    class Puesto(models.IntegerChoices):
+    class Rol(models.IntegerChoices):
         ADMINISTRADOR = 1, 'Administrador'
         EMPLEADO_A = 2, 'Empleado A'
         EMPLEADO_B = 3, 'Empleado B'
 
+    usuario = models.CharField(max_length=50, unique=True, blank=True, null=True)
     nombre = models.CharField(max_length=100)
     clave_empleado = models.CharField(max_length=20, unique=True)
-    puesto = models.PositiveSmallIntegerField(choices=Puesto.choices)
+    rol = models.PositiveSmallIntegerField(choices=Rol.choices)
+    id_plaza = models.CharField(max_length=20, blank=True, null=True)
+    puesto = models.CharField(max_length=100, blank=True, null=True)
 
     def __str__(self):
         return self.nombre
 
     def es_administrador(self):
-        return self.puesto == self.Puesto.ADMINISTRADOR
+        return self.rol == self.Rol.ADMINISTRADOR
 
     def es_empleado_a(self):
-        return self.puesto == self.Puesto.EMPLEADO_A
+        return self.rol == self.Rol.EMPLEADO_A
 
     def es_empleado_b(self):
-        return self.puesto == self.Puesto.EMPLEADO_B
+        return self.rol == self.Rol.EMPLEADO_B
 
     def puede_cargar_expedientes(self):
-        return self.puesto in {
-            self.Puesto.ADMINISTRADOR,
-            self.Puesto.EMPLEADO_A,
-            self.Puesto.EMPLEADO_B,
+        return self.rol in {
+            self.Rol.ADMINISTRADOR,
+            self.Rol.EMPLEADO_A,
+            self.Rol.EMPLEADO_B,
         }
 
     def puede_archivar_expedientes(self):
-        return self.puesto in {
-            self.Puesto.ADMINISTRADOR,
-            self.Puesto.EMPLEADO_A,
+        return self.rol in {
+            self.Rol.ADMINISTRADOR,
+            self.Rol.EMPLEADO_A,
         }
 
     def puede_gestionar_usuarios(self):

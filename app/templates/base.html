@@ -480,6 +480,74 @@
     <script src="{% static 'js/jquery.min.js' %}"></script>
     <script src="{% static 'js/popper.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
-</body>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const Swal = window.Swal;
+
+        function getCookie(name) {
+            const cookies = document.cookie.split(';');
+            for (const cookie of cookies) {
+                const c = cookie.trim();
+                if (c.startsWith(name + '=')) {
+                    return decodeURIComponent(c.substring(name.length + 1));
+                }
+            }
+            return null;
+        }
+
+        function getCsrfToken() {
+            return '{{ csrf_token }}' || getCookie('csrftoken');
+        }
+
+        window.addEventListener('DOMContentLoaded', function () {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const tags = alert.classList;
+                let icon = 'info';
+                if (tags.contains('alert-success')) icon = 'success';
+                else if (tags.contains('alert-danger')) icon = 'error';
+                else if (tags.contains('alert-warning')) icon = 'warning';
+                else if (tags.contains('alert-info')) icon = 'info';
+
+                Swal.fire({
+                    icon: icon,
+                    title: icon === 'success' ? 'Éxito' : icon === 'error' ? 'Error' : icon === 'warning' ? 'Atención' : 'Información',
+                    text: alert.textContent,
+                    confirmButtonText: 'Aceptar',
+                    timer: 4000,
+                    timerProgressBar: true,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false
+                });
+                alert.remove();
+            });
+        });
+
+        function swalConfirm(message, title) {
+            title = title || 'Confirmar';
+            return Swal.fire({
+                icon: 'warning',
+                title: title,
+                text: message,
+                showCancelButton: true,
+                confirmButtonText: 'Sí, continuar',
+                cancelButtonText: 'Cancelar',
+                reverseButtons: true
+            }).then(function (result) { return result.isConfirmed; });
+        }
+
+        function swalAlert(message, title) {
+            title = title || 'Alerta';
+            return Swal.fire({
+                icon: 'error',
+                title: title,
+                text: message,
+                confirmButtonText: 'Aceptar'
+            });
+        }
+    </script>
 
 </html>
