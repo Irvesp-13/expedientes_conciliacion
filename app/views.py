@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.db import connection
 from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage
 from .models import *
-from .models import Empleado, Bitacora
+from .models import Empleado, Bitacora, crear_tabla_expediente_periodo, obtener_periodos_disponibles, get_periodo_actual
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from .models import CargaDescarga
@@ -12,6 +14,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from datetime import datetime
 from urllib.parse import quote
+
+
+def pagina_no_encontrada(request, exception=None):
+    return render(request, '404.html', status=404)
 
 
 def registrar_accion(empleado, accion, descripcion, request=None):
@@ -42,10 +48,6 @@ def error(request):
     mensajes = [str(message) for message in messages.get_messages(request)]
     mensaje = request.GET.get('mensaje') or (mensajes[0] if mensajes else 'No tienes permiso para acceder a esta página.')
     return render(request, 'error.html', {'mensaje': mensaje})
-
-
-def pagina_no_encontrada(request, exception=None):
-    return render(request, '404.html', status=404)
 
 
 def formatear_identificador_expediente(expediente):
@@ -151,6 +153,13 @@ def obtener_campos_exportables_expediente():
     return [(campo, etiquetas.get(campo, campo.replace('_', ' ').upper())) for campo in campos]
 
 
+def obtener_etiqueta_puesto(puesto):
+    try:
+        return Empleado.Puesto(int(puesto)).label
+    except (TypeError, ValueError):
+        return 'Puesto desconocido'
+
+
 def obtener_etiqueta_rol(rol):
     try:
         return Empleado.Rol(int(rol)).label
@@ -160,43 +169,132 @@ def obtener_etiqueta_rol(rol):
 
 def iniciar_sesion(request):
     if request.method == 'POST':
-        usuario = request.POST['usuario']
-        clave_empleado = request.POST['clave_empleado']
+        usuario = request.POST.get('usuario', '')
+        clave_empleado = request.POST.get('clave_empleado', '')
+        
+        if not usuario or not clave_empleado:
+            return render(request, 'iniciar_sesion.html', {'error': 'Por favor complete usuario y clave'})
         
         try:
-            # Buscar al empleado por su usuario y clave de empleado
-            empleado = Empleado.objects.get(usuario=usuario, clave_empleado=clave_empleado)
+            empleado = Empleado.objects.get(clave_empleado=clave_empleado, usuario=usuario)
             
-            # Guardar el ID del empleado en la sesión
             request.session['empleado_id'] = empleado.id
             
-            # Registrar en bitácora
             registrar_accion(empleado, 'Inicio de sesión', f'El usuario {empleado.usuario} inició sesión', request)
             
             return redirect('bienvenida')
         except Empleado.DoesNotExist:
-            # Mostrar mensaje de error si las credenciales son incorrectas
             return render(request, 'iniciar_sesion.html', {'error': 'Credenciales incorrectas'})
     
     return render(request, 'iniciar_sesion.html')
 
 def bienvenida(request):
-    # Verificar si el empleado está autenticado
     empleado_id = request.session.get('empleado_id')
     if not empleado_id:
         return redirect('iniciar_sesion')
     
-    # Obtener el empleado autenticado
     empleado = Empleado.objects.get(id=empleado_id)
     
-    # Obtener registros de la tabla expedientes
-    expedientes = ConciliacionExpedientes.objects.all()
+    periodo_seleccionado = request.GET.get('periodo') or 'enero_2026'
+    request.session['periodo_actual'] = periodo_seleccionado
+    
+    # Asegurar que la tabla exista
+    crear_tabla_expediente_periodo(periodo_seleccionado)
+    
+    # Obtener expedientes de la tabla del periodo usando SQL
+    table_name = f"expediente_{periodo_seleccionado}"
+    fields = [f.name for f in ConciliacionExpedientes._meta.fields]
+    
+    expedientes_list = []
+    with connection.cursor() as cursor:
+        cursor.execute(f"SELECT {', '.join(fields)} FROM `{table_name}` ORDER BY id")
+        for row in cursor.fetchall():
+            expediente = ExpedienteDinamico(row, table_name)
+            expedientes_list.append(expediente)
+    
+    # Paginado manual sobre la lista
+    paginator = Paginator(expedientes_list, 100)
+    page_number = request.GET.get('page') or '1'
+    try:
+        expedientes = paginator.page(page_number)
+    except:
+        expedientes = paginator.page(1)
+    
     empleados_carga = Empleado.objects.exclude(pk=empleado.id).order_by('nombre')
+    periodos_disponibles = obtener_periodos_disponibles()
+    
+    periodos_con_nombres = []
+    for p in periodos_disponibles:
+        partes = p.split('_')
+        mes = partes[0].title() if len(partes) > 0 else ''
+        año = partes[1] if len(partes) > 1 else ''
+        periodos_con_nombres.append({'clave': p, 'nombre': f'{mes} {año}'})
     
     return render(request, 'bienvenida.html', {
         'empleado': empleado,
         'expedientes': expedientes,
         'empleados_carga': empleados_carga,
+        'periodo_actual': periodo_seleccionado,
+        'periodos_disponibles': periodos_con_nombres,
+    })
+
+
+class ExpedienteDinamico:
+    def __init__(self, row, table_name):
+        fields = [
+            'id', 'letra', 'exp', 'anio', 'actor', 'demandado', 'area_en_la_que_se_encuentra',
+            'acuerdo_pendiente_de_caducidad', 'caducidad', 'acuerdo_pendiente_prescripcion', 'prescripcion',
+            'convenio_en_tramite', 'desistimiento', 'por_no_interpuesta', 'convenio_cumplimiento_laudo',
+            'archivado_por_recision', 'descentralizado', 'incompetencia', 'emplazamiento',
+            'falta_not_actor_emplazamiento', 'falta_emplazar', 'no_han_senalado', 'terminio',
+            'imposibilidad_emplazamiento', 'exhorto', 'procedimiento', 'cita_conciliacion',
+            'sin_cita_conciliacion', 'convenio_p_cumpl', 'cde', 'tercero_audiencia', 'oap',
+            'pruebas', 'reserva', 'pendiente_revision', 'notificadas_ambas', 'desahogo_pruebas',
+            'falta_citar_test', 'fata_not_partes', 'fuerza_publica_testimonial', 'justificante',
+            'actora', 'demandada', 'tercero', 'falta_designar_per', 'falta_not_partes_conf',
+            'falta_ir_domicilio', 'f_hacer_oficio', 'falta_girar_oficio', 'sin_respuesta',
+            'falta_inspeccion', 'falta_cotejo', 'inc_nul_not', 'cierre', 'alegatos',
+            'prueba_pendiente', 'cierre_cierre', 'pendiente_de_laudo', 'dictado',
+            'falta_not_partes_dictados', 'condenatorio', 'absolutorio', 'en_colegiado',
+            'ejecucion', 'auto_ejecucion', 'falta_not_actor_ejecucion', 'requerimiento',
+            'fuerza_publica_requerimiento', 'imposibilidad_requerimiento', 'inembargable',
+            'cuentas_embargadas', 'embargo_de_bien_inmueble_yo_muebles', 'revision', 'falta_reso_rev',
+            'falta_not_partes_requerimiento', 'remate', 'indirecto', 'emplazar',
+            'desahogo_pruebas_indirecto', 'dictar_laudo', 'ejecucion_indirecto', 'directo'
+        ]
+        for i, field in enumerate(fields):
+            setattr(self, field, row[i] if i < len(row) else None)
+        self._table_name = table_name
+    
+    def __str__(self):
+        partes = [self.letra, self.exp, str(self.anio) if self.anio else None]
+        return ' '.join(str(p) for p in partes if p) or f'Expediente {self.id}'
+
+
+def crear_periodo(request):
+    empleado_id = request.session.get('empleado_id')
+    if not empleado_id:
+        return redirect('iniciar_sesion')
+    
+    empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.es_administrador():
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
+    
+    if request.method == 'POST':
+        mes = request.POST.get('mes')
+        anio = request.POST.get('anio')
+        if mes and anio:
+            periodo = f"{mes}_{anio}"
+            crear_tabla_expediente_periodo(periodo)
+            registrar_accion(empleado, 'Crear periodo', f'Creó el periodo {mes} {anio}', request)
+            messages.success(request, f'Periodo {mes} {anio} creado correctamente.')
+            return redirect(f"{reverse('bienvenida')}?periodo={periodo}")
+        else:
+            messages.error(request, 'Selecciona mes y año.')
+    
+    return render(request, 'crear_periodo.html', {
+        'meses': ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
     })
 
 
@@ -226,109 +324,96 @@ def agregar_expediente(request):
         messages.error(request, 'No tienes permiso para acceder a esta página.')
         return redirigir_a_error('No tienes permiso para acceder a esta página.')
     
+    # Obtener periodo del GET o sesión
+    periodo_get = request.GET.get('periodo')
+    if periodo_get:
+        periodo_seleccionado = periodo_get
+        request.session['periodo_actual'] = periodo_seleccionado
+    else:
+        periodo_seleccionado = request.session.get('periodo_actual') or 'enero_2026'
+    
     if request.method == 'POST':
-        # Get the last id_expediente and increment it
-        last_expediente = ConciliacionExpedientes.objects.order_by('-id').first()
-        new_id = 1 if not last_expediente else last_expediente.id + 1
+        # Asegurar que la tabla exista
+        crear_tabla_expediente_periodo(periodo_seleccionado)
+        table_name = f"expediente_{periodo_seleccionado}"
+        
+        # Obtener el último id de la tabla del periodo
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT MAX(id) FROM `{table_name}`")
+            last_id = cursor.fetchone()[0]
+            new_id = 1 if last_id is None else last_id + 1
         
         # Helper function to convert checkbox values
         def get_int_value(field_name):
             value = request.POST.get(field_name)
             return 1 if value == '1' or value == 'on' else None
         
-        nuevo_expediente = ConciliacionExpedientes(
-            id=new_id,
-            letra=request.POST.get('letra', None),
-            exp=request.POST.get('exp', None),
-            anio=request.POST.get('anio', None),
-            actor=request.POST.get('actor', None),
-            demandado=request.POST.get('demandado', None),
-            area_en_la_que_se_encuentra=request.POST.get('area_en_la_que_se_encuentra', None),
-            acuerdo_pendiente_de_caducidad=get_int_value('acuerdo_pendiente_de_caducidad'),
-            caducidad=get_int_value('caducidad'),
-            acuerdo_pendiente_prescripcion=get_int_value('acuerdo_pendiente_prescripcion'),
-            prescripcion=get_int_value('prescripcion'),
-            convenio_en_tramite=get_int_value('convenio_en_tramite'),
-            desistimiento=get_int_value('desistimiento'),
-            por_no_interpuesta=get_int_value('por_no_interpuesta'),
-            convenio_cumplimiento_laudo=get_int_value('convenio_cumplimiento_laudo'),
-            archivado_por_recision=get_int_value('archivado_por_recision'),
-            descentralizado=get_int_value('descentralizado'),
-            incompetencia=get_int_value('incompetencia'),
-            emplazamiento=get_int_value('emplazamiento'),
-            falta_not_actor_emplazamiento=get_int_value('falta_not_actor_emplazamiento'),
-            falta_emplazar=get_int_value('falta_emplazar'),
-            no_han_senalado=get_int_value('no_han_senalado'),
-            terminio=get_int_value('terminio'),
-            imposibilidad_emplazamiento=get_int_value('imposibilidad_emplazamiento'),
-            exhorto=get_int_value('exhorto'),
-            procedimiento=get_int_value('procedimiento'),
-            cita_conciliacion=get_int_value('cita_conciliacion'),
-            sin_cita_conciliacion=get_int_value('sin_cita_conciliacion'),
-            convenio_p_cumpl=get_int_value('convenio_p_cumpl'),
-            cde=get_int_value('cde'),
-            tercero_audiencia=get_int_value('tercero_audiencia'),
-            oap=get_int_value('oap'),
-            pruebas=get_int_value('pruebas'),
-            reserva=get_int_value('reserva'),
-            pendiente_revision=get_int_value('pendiente_revision'),
-            notificadas_ambas=get_int_value('notificadas_ambas'),
-            desahogo_pruebas=get_int_value('desahogo_pruebas'),
-            falta_citar_test=get_int_value('falta_citar_test'),
-            fata_not_partes=get_int_value('fata_not_partes'),
-            fuerza_publica_testimonial=get_int_value('fuerza_publica_testimonial'),
-            justificante=get_int_value('justificante'),
-            actora=get_int_value('actora'),
-            demandada=get_int_value('demandada'),
-            tercero=get_int_value('tercero'),
-            falta_designar_per=get_int_value('falta_designar_per'),
-            falta_not_partes_conf=get_int_value('falta_not_partes_conf'),
-            falta_ir_domicilio=get_int_value('falta_ir_domicilio'),
-            f_hacer_oficio=get_int_value('f_hacer_oficio'),
-            falta_girar_oficio=get_int_value('falta_girar_oficio'),
-            sin_respuesta=get_int_value('sin_respuesta'),
-            falta_inspeccion=get_int_value('falta_inspeccion'),
-            falta_cotejo=get_int_value('falta_cotejo'),
-            inc_nul_not=get_int_value('inc_nul_not'),
-            cierre=get_int_value('cierre'),
-            alegatos=get_int_value('alegatos'),
-            prueba_pendiente=get_int_value('prueba_pendiente'),
-            cierre_cierre=get_int_value('cierre_cierre'),
-            pendiente_de_laudo=get_int_value('pendiente_de_laudo'),
-            dictado=get_int_value('dictado'),
-            falta_not_partes_dictados=get_int_value('falta_not_partes_dictados'),
-            condenatorio=get_int_value('condenatorio'),
-            absolutorio=get_int_value('absolutorio'),
-            en_colegiado=get_int_value('en_colegiado'),
-            ejecucion=get_int_value('ejecucion'),
-            auto_ejecucion=get_int_value('auto_ejecucion'),
-            falta_not_actor_ejecucion=get_int_value('falta_not_actor_ejecucion'),
-            requerimiento=get_int_value('requerimiento'),
-            fuerza_publica_requerimiento=get_int_value('fuerza_publica_requerimiento'),
-            imposibilidad_requerimiento=get_int_value('imposibilidad_requerimiento'),
-            inembargable=get_int_value('inembargable'),
-            cuentas_embargadas=get_int_value('cuentas_embargadas'),
-            embargo_de_bien_inmueble_yo_muebles=get_int_value('embargo_de_bien_inmueble_yo_muebles'),
-            revision=get_int_value('revision'),
-            falta_reso_rev=get_int_value('falta_reso_rev'),
-            falta_not_partes_requerimiento=get_int_value('falta_not_partes_requerimiento'),
-            remate=get_int_value('remate'),
-            indirecto=get_int_value('indirecto'),
-            emplazar=get_int_value('emplazar'),
-            desahogo_pruebas_indirecto=get_int_value('desahogo_pruebas_indirecto'),
-            dictar_laudo=get_int_value('dictar_laudo'),
-            ejecucion_indirecto=get_int_value('ejecucion_indirecto'),
-            directo=get_int_value('directo')
-        )
-        nuevo_expediente.save()
+        # Campos del expediente
+        fields = ['id', 'letra', 'exp', 'anio', 'actor', 'demandado', 'area_en_la_que_se_encuentra',
+                  'acuerdo_pendiente_de_caducidad', 'caducidad', 'acuerdo_pendiente_prescripcion', 'prescripcion',
+                  'convenio_en_tramite', 'desistimiento', 'por_no_interpuesta', 'convenio_cumplimiento_laudo',
+                  'archivado_por_recision', 'descentralizado', 'incompetencia', 'emplazamiento',
+                  'falta_not_actor_emplazamiento', 'falta_emplazar', 'no_han_senalado', 'terminio',
+                  'imposibilidad_emplazamiento', 'exhorto', 'procedimiento', 'cita_conciliacion',
+                  'sin_cita_conciliacion', 'convenio_p_cumpl', 'cde', 'tercero_audiencia', 'oap',
+                  'pruebas', 'reserva', 'pendiente_revision', 'notificadas_ambas', 'desahogo_pruebas',
+                  'falta_citar_test', 'fata_not_partes', 'fuerza_publica_testimonial', 'justificante',
+                  'actora', 'demandada', 'tercero', 'falta_designar_per', 'falta_not_partes_conf',
+                  'falta_ir_domicilio', 'f_hacer_oficio', 'falta_girar_oficio', 'sin_respuesta',
+                  'falta_inspeccion', 'falta_cotejo', 'inc_nul_not', 'cierre', 'alegatos',
+                  'prueba_pendiente', 'cierre_cierre', 'pendiente_de_laudo', 'dictado',
+                  'falta_not_partes_dictados', 'condenatorio', 'absolutorio', 'en_colegiado',
+                  'ejecucion', 'auto_ejecucion', 'falta_not_actor_ejecucion', 'requerimiento',
+                  'fuerza_publica_requerimiento', 'imposibilidad_requerimiento', 'inembargable',
+                  'cuentas_embargadas', 'embargo_de_bien_inmueble_yo_muebles', 'revision', 'falta_reso_rev',
+                  'falta_not_partes_requerimiento', 'remate', 'indirecto', 'emplazar',
+                  'desahogo_pruebas_indirecto', 'dictar_laudo', 'ejecucion_indirecto', 'directo']
         
-        # Registrar en bitácora
-        registrar_accion(empleado, 'Crear expediente', f'Creó el expediente {request.POST.get("exp", "")} - Actor: {request.POST.get("actor", "")} vs Demandado: {request.POST.get("demandado", "")}', request)
+        values = [
+            new_id, request.POST.get('letra', ''), request.POST.get('exp', ''), request.POST.get('anio') or None,
+            request.POST.get('actor', ''), request.POST.get('demandado', ''), request.POST.get('area_en_la_que_se_encuentra', ''),
+            get_int_value('acuerdo_pendiente_de_caducidad'), get_int_value('caducidad'), get_int_value('acuerdo_pendiente_prescripcion'),
+            get_int_value('prescripcion'), get_int_value('convenio_en_tramite'), get_int_value('desistimiento'),
+            get_int_value('por_no_interpuesta'), get_int_value('convenio_cumplimiento_laudo'), get_int_value('archivado_por_recision'),
+            get_int_value('descentralizado'), get_int_value('incompetencia'), get_int_value('emplazamiento'),
+            get_int_value('falta_not_actor_emplazamiento'), get_int_value('falta_emplazar'), get_int_value('no_han_senalado'),
+            get_int_value('terminio'), get_int_value('imposibilidad_emplazamiento'), get_int_value('exhorto'),
+            get_int_value('procedimiento'), get_int_value('cita_conciliacion'), get_int_value('sin_cita_conciliacion'),
+            get_int_value('convenio_p_cumpl'), get_int_value('cde'), get_int_value('tercero_audiencia'),
+            get_int_value('oap'), get_int_value('pruebas'), get_int_value('reserva'), get_int_value('pendiente_revision'),
+            get_int_value('notificadas_ambas'), get_int_value('desahogo_pruebas'), get_int_value('falta_citar_test'),
+            get_int_value('fata_not_partes'), get_int_value('fuerza_publica_testimonial'), get_int_value('justificante'),
+            get_int_value('actora'), get_int_value('demandada'), get_int_value('tercero'),
+            get_int_value('falta_designar_per'), get_int_value('falta_not_partes_conf'), get_int_value('falta_ir_domicilio'),
+            get_int_value('f_hacer_oficio'), get_int_value('falta_girar_oficio'), get_int_value('sin_respuesta'),
+            get_int_value('falta_inspeccion'), get_int_value('falta_cotejo'), get_int_value('inc_nul_not'),
+            get_int_value('cierre'), get_int_value('alegatos'), get_int_value('prueba_pendiente'),
+            get_int_value('cierre_cierre'), get_int_value('pendiente_de_laudo'), get_int_value('dictado'),
+            get_int_value('falta_not_partes_dictados'), get_int_value('condenatorio'), get_int_value('absolutorio'),
+            get_int_value('en_colegiado'), get_int_value('ejecucion'), get_int_value('auto_ejecucion'),
+            get_int_value('falta_not_actor_ejecucion'), get_int_value('requerimiento'),
+            get_int_value('fuerza_publica_requerimiento'), get_int_value('imposibilidad_requerimiento'),
+            get_int_value('inembargable'), get_int_value('cuentas_embargadas'),
+            get_int_value('embargo_de_bien_inmueble_yo_muebles'), get_int_value('revision'),
+            get_int_value('falta_reso_rev'), get_int_value('falta_not_partes_requerimiento'),
+            get_int_value('remate'), get_int_value('indirecto'), get_int_value('emplazar'),
+            get_int_value('desahogo_pruebas_indirecto'), get_int_value('dictar_laudo'),
+            get_int_value('ejecucion_indirecto'), get_int_value('directo')
+        ]
+        
+        placeholders = ', '.join(['%s'] * len(fields))
+        with connection.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO `{table_name}` ({', '.join(fields)}) VALUES ({placeholders})", 
+                values
+            )
+        
+        registrar_accion(empleado, 'Crear expediente', f'Creó el expediente {request.POST.get("exp", "")} - Actor: {request.POST.get("actor", "")} vs Demandado: {request.POST.get("demandado", "")} en {periodo_seleccionado}', request)
         
         messages.success(request, 'Expediente agregado correctamente.')
-        return redirect('bienvenida')
+        return redirect(f"{reverse('bienvenida')}?periodo={periodo_seleccionado}")
     
-    return render(request, 'agregar_expediente.html')
+    return render(request, 'agregar_expediente.html', {'periodo_actual': periodo_seleccionado})
 
 
 def crear_empleado(request):
@@ -341,28 +426,22 @@ def crear_empleado(request):
         return redirigir_a_error('No tienes permiso para acceder a esta página.')
 
     if request.method == 'POST':
-        usuario = request.POST.get('usuario')
         nombre = request.POST.get('nombre')
         clave_empleado = request.POST.get('clave_empleado')
-        rol = request.POST.get('rol')
-        id_plaza = request.POST.get('id_plaza', '')
-        puesto = request.POST.get('puesto', '')
-        if usuario and nombre and clave_empleado and rol:
+        puesto = request.POST.get('puesto')
+        if nombre and clave_empleado and puesto:
             if Empleado.objects.filter(clave_empleado=clave_empleado).exists():
                 messages.error(request, 'La clave de empleado ya existe.')
             else:
                 nuevo_empleado = Empleado.objects.create(
-                    usuario=usuario,
                     nombre=nombre,
                     clave_empleado=clave_empleado,
-                    rol=rol,
-                    id_plaza=id_plaza,
                     puesto=puesto
                 )
                 
                 # Registrar en bitácora
-                tipo_rol = obtener_etiqueta_rol(rol)
-                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_rol}', request)
+                tipo_puesto = obtener_etiqueta_puesto(puesto)
+                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
                 
                 messages.success(request, 'Empleado creado exitosamente.')
                 return redirect('crear_empleado')
@@ -372,19 +451,36 @@ def crear_empleado(request):
     empleados = Empleado.objects.all()
     return render(request, 'crear_empleado.html', {
         'empleados': empleados,
-        'roles': Empleado.Rol.choices,
+        'puestos': Empleado.Puesto.choices,
     })
 
 def ver_expediente(request, id_expediente):
     if not request.session.get('empleado_id'):
         return redirect('iniciar_sesion')
     
-    try:
-        expediente = ConciliacionExpedientes.objects.get(pk=id_expediente)
-        return render(request, 'ver_expediente.html', {'expediente': expediente})
-    except ConciliacionExpedientes.DoesNotExist:
+    periodo_seleccionado = request.GET.get('periodo') or request.session.get('periodo_actual') or 'enero_2026'
+    
+    # Buscar en todas las tablas de periodo
+    periodos = obtener_periodos_disponibles()
+    expediente = None
+    table_name = None
+    
+    for p in periodos:
+        tabla = f"expediente_{p}"
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT * FROM `{tabla}` WHERE id = %s", [id_expediente])
+            row = cursor.fetchone()
+            if row:
+                fields = [f.name for f in ConciliacionExpedientes._meta.fields]
+                expediente = ExpedienteDinamico(row, tabla)
+                table_name = tabla
+                break
+    
+    if not expediente:
         messages.error(request, 'El expediente no existe.')
-        return redirect('bienvenida')
+        return redirect(f"{reverse('bienvenida')}?periodo={periodo_seleccionado}")
+    
+    return render(request, 'ver_expediente.html', {'expediente': expediente, 'periodo_actual': periodo_seleccionado})
 
 def editar_expediente(request, id_expediente):
     if not request.session.get('empleado_id'):
@@ -394,112 +490,171 @@ def editar_expediente(request, id_expediente):
     if not empleado.es_administrador():
         messages.error(request, 'No tienes permiso para realizar esta acción.')
         return redirigir_a_error('No tienes permiso para realizar esta acción.')
-
-    try:
-        expediente = get_object_or_404(ConciliacionExpedientes, pk=id_expediente)
-        
-        if request.method == 'POST':
-            # Helper function to convert checkbox values
-            def get_int_value(field_name):
-                value = request.POST.get(field_name)
-                return 1 if value == '1' or value == 'on' else None
-            
-            # Update all fields
-            expediente.letra = request.POST.get('letra', None)
-            expediente.exp = request.POST.get('exp', None)
-            expediente.anio = request.POST.get('anio', None)
-            expediente.actor = request.POST.get('actor', None)
-            expediente.demandado = request.POST.get('demandado', None)
-            expediente.area_en_la_que_se_encuentra = request.POST.get('area_en_la_que_se_encuentra', None)
-            expediente.acuerdo_pendiente_de_caducidad = get_int_value('acuerdo_pendiente_de_caducidad')
-            expediente.caducidad = get_int_value('caducidad')
-            expediente.acuerdo_pendiente_prescripcion = get_int_value('acuerdo_pendiente_prescripcion')
-            expediente.prescripcion = get_int_value('prescripcion')
-            expediente.convenio_en_tramite = get_int_value('convenio_en_tramite')
-            expediente.desistimiento = get_int_value('desistimiento')
-            expediente.por_no_interpuesta = get_int_value('por_no_interpuesta')
-            expediente.convenio_cumplimiento_laudo = get_int_value('convenio_cumplimiento_laudo')
-            expediente.archivado_por_recision = get_int_value('archivado_por_recision')
-            expediente.descentralizado = get_int_value('descentralizado')
-            expediente.incompetencia = get_int_value('incompetencia')
-            expediente.emplazamiento = get_int_value('emplazamiento')
-            expediente.falta_not_actor_emplazamiento = get_int_value('falta_not_actor_emplazamiento')
-            expediente.falta_emplazar = get_int_value('falta_emplazar')
-            expediente.no_han_senalado = get_int_value('no_han_senalado')
-            expediente.terminio = get_int_value('terminio')
-            expediente.imposibilidad_emplazamiento = get_int_value('imposibilidad_emplazamiento')
-            expediente.exhorto = get_int_value('exhorto')
-            expediente.procedimiento = get_int_value('procedimiento')
-            expediente.cita_conciliacion = get_int_value('cita_conciliacion')
-            expediente.sin_cita_conciliacion = get_int_value('sin_cita_conciliacion')
-            expediente.convenio_p_cumpl = get_int_value('convenio_p_cumpl')
-            expediente.cde = get_int_value('cde')
-            expediente.tercero_audiencia = get_int_value('tercero_audiencia')
-            expediente.oap = get_int_value('oap')
-            expediente.pruebas = get_int_value('pruebas')
-            expediente.reserva = get_int_value('reserva')
-            expediente.pendiente_revision = get_int_value('pendiente_revision')
-            expediente.notificadas_ambas = get_int_value('notificadas_ambas')
-            expediente.desahogo_pruebas = get_int_value('desahogo_pruebas')
-            expediente.falta_citar_test = get_int_value('falta_citar_test')
-            expediente.fata_not_partes = get_int_value('fata_not_partes')
-            expediente.fuerza_publica_testimonial = get_int_value('fuerza_publica_testimonial')
-            expediente.justificante = get_int_value('justificante')
-            expediente.actora = get_int_value('actora')
-            expediente.demandada = get_int_value('demandada')
-            expediente.tercero = get_int_value('tercero')
-            expediente.falta_designar_per = get_int_value('falta_designar_per')
-            expediente.falta_not_partes_conf = get_int_value('falta_not_partes_conf')
-            expediente.falta_ir_domicilio = get_int_value('falta_ir_domicilio')
-            expediente.f_hacer_oficio = get_int_value('f_hacer_oficio')
-            expediente.falta_girar_oficio = get_int_value('falta_girar_oficio')
-            expediente.sin_respuesta = get_int_value('sin_respuesta')
-            expediente.falta_inspeccion = get_int_value('falta_inspeccion')
-            expediente.falta_cotejo = get_int_value('falta_cotejo')
-            expediente.inc_nul_not = get_int_value('inc_nul_not')
-            expediente.cierre = get_int_value('cierre')
-            expediente.alegatos = get_int_value('alegatos')
-            expediente.prueba_pendiente = get_int_value('prueba_pendiente')
-            expediente.cierre_cierre = get_int_value('cierre_cierre')
-            expediente.pendiente_de_laudo = get_int_value('pendiente_de_laudo')
-            expediente.dictado = get_int_value('dictado')
-            expediente.falta_not_partes_dictados = get_int_value('falta_not_partes_dictados')
-            expediente.condenatorio = get_int_value('condenatorio')
-            expediente.absolutorio = get_int_value('absolutorio')
-            expediente.en_colegiado = get_int_value('en_colegiado')
-            expediente.ejecucion = get_int_value('ejecucion')
-            expediente.auto_ejecucion = get_int_value('auto_ejecucion')
-            expediente.falta_not_actor_ejecucion = get_int_value('falta_not_actor_ejecucion')
-            expediente.requerimiento = get_int_value('requerimiento')
-            expediente.fuerza_publica_requerimiento = get_int_value('fuerza_publica_requerimiento')
-            expediente.imposibilidad_requerimiento = get_int_value('imposibilidad_requerimiento')
-            expediente.inembargable = get_int_value('inembargable')
-            expediente.cuentas_embargadas = get_int_value('cuentas_embargadas')
-            expediente.embargo_de_bien_inmueble_yo_muebles = get_int_value('embargo_de_bien_inmueble_yo_muebles')
-            expediente.revision = get_int_value('revision')
-            expediente.falta_reso_rev = get_int_value('falta_reso_rev')
-            expediente.falta_not_partes_requerimiento = get_int_value('falta_not_partes_requerimiento')
-            expediente.remate = get_int_value('remate')
-            expediente.indirecto = get_int_value('indirecto')
-            expediente.emplazar = get_int_value('emplazar')
-            expediente.desahogo_pruebas_indirecto = get_int_value('desahogo_pruebas_indirecto')
-            expediente.dictar_laudo = get_int_value('dictar_laudo')
-            expediente.ejecucion_indirecto = get_int_value('ejecucion_indirecto')
-            expediente.directo = get_int_value('directo')
-            
-            expediente.save()
-            
-            # Registrar en bitácora
-            registrar_accion(empleado, 'Editar expediente', f'Editó el expediente {expediente.letra} {expediente.exp}/{expediente.anio} - Actor: {expediente.actor} vs Demandado: {expediente.demandado}', request)
-            
-            messages.success(request, 'Expediente actualizado correctamente.')
-            return redirect('bienvenida')
-        
-        return render(request, 'editar_expediente.html', {'expediente': expediente})
-        
-    except ConciliacionExpedientes.DoesNotExist:
+    
+    periodo_seleccionado = request.GET.get('periodo') or request.session.get('periodo_actual') or 'enero_2026'
+    
+    # Buscar en todas las tablas de periodo
+    periodos = obtener_periodos_disponibles()
+    expediente = None
+    table_name = None
+    
+    for p in periodos:
+        tabla = f"expediente_{p}"
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT * FROM `{tabla}` WHERE id = %s", [id_expediente])
+            row = cursor.fetchone()
+            if row:
+                fields = [f.name for f in ConciliacionExpedientes._meta.fields]
+                expediente = ExpedienteDinamico(row, tabla)
+                table_name = tabla
+                break
+    
+    if not expediente:
         messages.error(request, 'El expediente no existe.')
-        return redirect('bienvenida')
+        return redirect(f"{reverse('bienvenida')}?periodo={periodo_seleccionado}")
+    
+    if request.method == 'POST':
+        # Helper function to convert checkbox values
+        def get_int_value(field_name):
+            value = request.POST.get(field_name)
+            return 1 if value == '1' or value == 'on' else None
+        
+        # Obtener valores del POST
+        values = {
+            'letra': request.POST.get('letra', ''),
+            'exp': request.POST.get('exp', ''),
+            'anio': request.POST.get('anio') or None,
+            'actor': request.POST.get('actor', ''),
+            'demandado': request.POST.get('demandado', ''),
+            'area_en_la_que_se_encuentra': request.POST.get('area_en_la_que_se_encuentra', ''),
+            'acuerdo_pendiente_de_caducidad': get_int_value('acuerdo_pendiente_de_caducidad'),
+            'caducidad': get_int_value('caducidad'),
+            'acuerdo_pendiente_prescripcion': get_int_value('acuerdo_pendiente_prescripcion'),
+            'prescripcion': get_int_value('prescripcion'),
+            'convenio_en_tramite': get_int_value('convenio_en_tramite'),
+            'desistimiento': get_int_value('desistimiento'),
+            'por_no_interpuesta': get_int_value('por_no_interpuesta'),
+            'convenio_cumplimiento_laudo': get_int_value('convenio_cumplimiento_laudo'),
+            'archivado_por_recision': get_int_value('archivado_por_recision'),
+            'descentralizado': get_int_value('descentralizado'),
+            'incompetencia': get_int_value('incompetencia'),
+            'emplazamiento': get_int_value('emplazamiento'),
+            'falta_not_actor_emplazamiento': get_int_value('falta_not_actor_emplazamiento'),
+            'falta_emplazar': get_int_value('falta_emplazar'),
+            'no_han_senalado': get_int_value('no_han_senalado'),
+            'terminio': get_int_value('terminio'),
+            'imposibilidad_emplazamiento': get_int_value('imposibilidad_emplazamiento'),
+            'exhorto': get_int_value('exhorto'),
+            'procedimiento': get_int_value('procedimiento'),
+            'cita_conciliacion': get_int_value('cita_conciliacion'),
+            'sin_cita_conciliacion': get_int_value('sin_cita_conciliacion'),
+            'convenio_p_cumpl': get_int_value('convenio_p_cumpl'),
+            'cde': get_int_value('cde'),
+            'tercero_audiencia': get_int_value('tercero_audiencia'),
+            'oap': get_int_value('oap'),
+            'pruebas': get_int_value('pruebas'),
+            'reserva': get_int_value('reserva'),
+            'pendiente_revision': get_int_value('pendiente_revision'),
+            'notificadas_ambas': get_int_value('notificadas_ambas'),
+            'desahogo_pruebas': get_int_value('desahogo_pruebas'),
+            'falta_citar_test': get_int_value('falta_citar_test'),
+            'fata_not_partes': get_int_value('fata_not_partes'),
+            'fuerza_publica_testimonial': get_int_value('fuerza_publica_testimonial'),
+            'justificante': get_int_value('justificante'),
+            'actora': get_int_value('actora'),
+            'demandada': get_int_value('demandada'),
+            'tercero': get_int_value('tercero'),
+            'falta_designar_per': get_int_value('falta_designar_per'),
+            'falta_not_partes_conf': get_int_value('falta_not_partes_conf'),
+            'falta_ir_domicilio': get_int_value('falta_ir_domicilio'),
+            'f_hacer_oficio': get_int_value('f_hacer_oficio'),
+            'falta_girar_oficio': get_int_value('falta_girar_oficio'),
+            'sin_respuesta': get_int_value('sin_respuesta'),
+            'falta_inspeccion': get_int_value('falta_inspeccion'),
+            'falta_cotejo': get_int_value('falta_cotejo'),
+            'inc_nul_not': get_int_value('inc_nul_not'),
+            'cierre': get_int_value('cierre'),
+            'alegatos': get_int_value('alegatos'),
+            'prueba_pendiente': get_int_value('prueba_pendiente'),
+            'cierre_cierre': get_int_value('cierre_cierre'),
+            'pendiente_de_laudo': get_int_value('pendiente_de_laudo'),
+            'dictado': get_int_value('dictado'),
+            'falta_not_partes_dictados': get_int_value('falta_not_partes_dictados'),
+            'condenatorio': get_int_value('condenatorio'),
+            'absolutorio': get_int_value('absolutorio'),
+            'en_colegiado': get_int_value('en_colegiado'),
+            'ejecucion': get_int_value('ejecucion'),
+            'auto_ejecucion': get_int_value('auto_ejecucion'),
+            'falta_not_actor_ejecucion': get_int_value('falta_not_actor_ejecucion'),
+            'requerimiento': get_int_value('requerimiento'),
+            'fuerza_publica_requerimiento': get_int_value('fuerza_publica_requerimiento'),
+            'imposibilidad_requerimiento': get_int_value('imposibilidad_requerimiento'),
+            'inembargable': get_int_value('inembargable'),
+            'cuentas_embargadas': get_int_value('cuentas_embargadas'),
+            'embargo_de_bien_inmueble_yo_muebles': get_int_value('embargo_de_bien_inmueble_yo_muebles'),
+            'revision': get_int_value('revision'),
+            'falta_reso_rev': get_int_value('falta_reso_rev'),
+            'falta_not_partes_requerimiento': get_int_value('falta_not_partes_requerimiento'),
+            'remate': get_int_value('remate'),
+            'indirecto': get_int_value('indirecto'),
+            'emplazar': get_int_value('emplazar'),
+            'desahogo_pruebas_indirecto': get_int_value('desahogo_pruebas_indirecto'),
+            'dictar_laudo': get_int_value('dictar_laudo'),
+            'ejecucion_indirecto': get_int_value('ejecucion_indirecto'),
+            'directo': get_int_value('directo')
+        }
+        
+        # Actualizar en la tabla del periodo
+        set_clause = ', '.join([f"`{k}` = %s" for k in values.keys()])
+        query = f"UPDATE `{table_name}` SET {set_clause} WHERE id = %s"
+        with connection.cursor() as cursor:
+            cursor.execute(query, list(values.values()) + [id_expediente])
+        
+        registrar_accion(empleado, 'Editar expediente', f'Editó el expediente {values["exp"]} - Actor: {values["actor"]} vs Demandado: {values["demandado"]} en {periodo_seleccionado}', request)
+        
+        messages.success(request, 'Expediente actualizado correctamente.')
+        return redirect(f"{reverse('bienvenida')}?periodo={periodo_seleccionado}")
+    
+    return render(request, 'editar_expediente.html', {'expediente': expediente, 'periodo_actual': periodo_seleccionado})
+
+
+def crear_empleado(request):
+    empleado_id = request.session.get('empleado_id')
+    if not empleado_id:
+        return redirect('iniciar_sesion')
+    empleado = Empleado.objects.get(id=empleado_id)
+    if not empleado.puede_gestionar_usuarios():
+        messages.error(request, 'No tienes permiso para acceder a esta página.')
+        return redirigir_a_error('No tienes permiso para acceder a esta página.')
+
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        clave_empleado = request.POST.get('clave_empleado')
+        puesto = request.POST.get('puesto')
+        if nombre and clave_empleado and puesto:
+            if Empleado.objects.filter(clave_empleado=clave_empleado).exists():
+                messages.error(request, 'La clave de empleado ya existe.')
+            else:
+                nuevo_empleado = Empleado.objects.create(
+                    nombre=nombre,
+                    clave_empleado=clave_empleado,
+                    puesto=puesto
+                )
+                
+                # Registrar en bitácora
+                tipo_puesto = obtener_etiqueta_puesto(puesto)
+                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
+                
+                messages.success(request, 'Empleado creado exitosamente.')
+                return redirect('crear_empleado')
+        else:
+            messages.error(request, 'Todos los campos son obligatorios.')
+
+    empleados = Empleado.objects.all()
+    return render(request, 'crear_empleado.html', {
+        'empleados': empleados,
+        'puestos': Empleado.Puesto.choices,
+    })
 
 
 def eliminar_expediente(request, id_expediente):
@@ -512,14 +667,28 @@ def eliminar_expediente(request, id_expediente):
         messages.error(request, 'No tienes permiso para eliminar expedientes.')
         return redirigir_a_error('No tienes permiso para eliminar expedientes.')
     
-    try:
-        expediente = ConciliacionExpedientes.objects.get(pk=id_expediente)
-        expediente.delete()
+    periodo_seleccionado = request.GET.get('periodo') or request.session.get('periodo_actual') or 'enero_2026'
+    
+    # Buscar en todas las tablas de periodo
+    periodos = obtener_periodos_disponibles()
+    eliminado = False
+    
+    for p in periodos:
+        tabla = f"expediente_{p}"
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT * FROM `{tabla}` WHERE id = %s", [id_expediente])
+            row = cursor.fetchone()
+            if row:
+                cursor.execute(f"DELETE FROM `{tabla}` WHERE id = %s", [id_expediente])
+                eliminado = True
+                break
+    
+    if eliminado:
         messages.success(request, 'Expediente eliminado correctamente.')
-    except ConciliacionExpedientes.DoesNotExist:
+    else:
         messages.error(request, 'El expediente no existe.')
     
-    return redirect('bienvenida')
+    return redirect(f"{reverse('bienvenida')}?periodo={periodo_seleccionado}")
 
 
 def editar_empleado(request, id):
@@ -533,23 +702,20 @@ def editar_empleado(request, id):
 
     empleado_edit = Empleado.objects.get(id=id)
     if request.method == 'POST':
-        empleado_edit.usuario = request.POST.get('usuario')
         empleado_edit.nombre = request.POST.get('nombre')
         empleado_edit.clave_empleado = request.POST.get('clave_empleado')
-        empleado_edit.rol = request.POST.get('rol')
-        empleado_edit.id_plaza = request.POST.get('id_plaza', '')
-        empleado_edit.puesto = request.POST.get('puesto', '')
+        empleado_edit.puesto = request.POST.get('puesto')
         empleado_edit.save()
         
         # Registrar en bitácora
-        tipo_rol = obtener_etiqueta_rol(empleado_edit.rol)
-        registrar_accion(admin, 'Editar empleado', f'Editó el empleado {empleado_edit.nombre} (Clave: {empleado_edit.clave_empleado}) - Rol: {tipo_rol}', request)
+        tipo_puesto = obtener_etiqueta_puesto(empleado_edit.puesto)
+        registrar_accion(admin, 'Editar empleado', f'Editó el empleado {empleado_edit.nombre} (Clave: {empleado_edit.clave_empleado}) - Puesto: {tipo_puesto}', request)
         
         messages.success(request, 'Empleado actualizado correctamente.')
         return redirect('crear_empleado')
     return render(request, 'editar_empleado.html', {
         'empleado': empleado_edit,
-        'roles': Empleado.Rol.choices,
+        'puestos': Empleado.Puesto.choices,
     })
 
 def eliminar_empleado(request, id):
@@ -609,7 +775,25 @@ def cargar_expediente(request):
                     'error': mensaje,
                     'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
                 }, status=403)
-            expediente = ConciliacionExpedientes.objects.get(pk=expediente_id)
+            
+            # Buscar expediente en todas las tablas de periodo
+            periodos = obtener_periodos_disponibles()
+            expediente = None
+            table_name = None
+            
+            for p in periodos:
+                tabla = f"expediente_{p}"
+                with connection.cursor() as cursor:
+                    cursor.execute(f"SELECT * FROM `{tabla}` WHERE id = %s", [expediente_id])
+                    row = cursor.fetchone()
+                    if row:
+                        fields = [f.name for f in ConciliacionExpedientes._meta.fields]
+                        expediente = ExpedienteDinamico(row, tabla)
+                        table_name = tabla
+                        break
+            
+            if not expediente:
+                return JsonResponse({'success': False, 'error': 'El expediente no existe'})
 
             nombre_carga_guardar = ''
             junta_carga_guardar = ''
@@ -626,11 +810,10 @@ def cargar_expediente(request):
                 nombre_carga_guardar = empleado_receptor.nombre
             else:
                 nombre_carga_guardar = nombre_carga_otro
-                junta_carga_guardar = junta_carga
 
             carga = CargaDescarga.objects.create(
                 empleado=empleado,
-                expediente=expediente,
+                expediente_id=expediente_id,
                 nombre_carga=nombre_carga_guardar,
                 junta_carga=junta_carga_guardar,
             )
@@ -638,15 +821,13 @@ def cargar_expediente(request):
             registrar_accion(
                 empleado,
                 'Cargar expediente',
-                f'Cargó el expediente {formatear_identificador_expediente(expediente)} - {nombre_carga_guardar}' + (f' - Junta: {junta_carga_guardar}' if junta_carga_guardar else ''),
+                f'Cargó el expediente {expediente.letra} {expediente.exp}/{expediente.anio} - {nombre_carga_guardar}' + (f' - Junta: {junta_carga_guardar}' if junta_carga_guardar else ''),
                 request,
             )
 
             return JsonResponse({'success': True, 'id': carga.id})
         except Empleado.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'El empleado no existe'})
-        except ConciliacionExpedientes.DoesNotExist:
-            return JsonResponse({'success': False, 'error': 'El expediente no existe'})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -692,23 +873,47 @@ def archivar_expediente(request):
             archivados_count = 0
             for expediente_id in expedientes_ids:
                 try:
-                    expediente = ConciliacionExpedientes.objects.get(pk=expediente_id)
-                    snapshot = obtener_snapshot_expediente(expediente)
+                    # Buscar en todas las tablas de periodo
+                    periodos = obtener_periodos_disponibles()
+                    expediente = None
+                    table_name = None
                     
-                    # Guardar el expediente completo para restauración posterior
-                    Archivados.objects.create(
-                        expediente=formatear_identificador_expediente(expediente),
-                        junta=expediente.area_en_la_que_se_encuentra or '',
-                        actor=expediente.actor or '',
-                        demandado=expediente.demandado or '',
-                        motivo=motivo,
-                        datos_expediente=snapshot,
-                    )
+                    for p in periodos:
+                        tabla = f"expediente_{p}"
+                        with connection.cursor() as cursor:
+                            cursor.execute(f"SELECT * FROM `{tabla}` WHERE id = %s", [expediente_id])
+                            row = cursor.fetchone()
+                            if row:
+                                fields = [f.name for f in ConciliacionExpedientes._meta.fields]
+                                expediente = ExpedienteDinamico(row, tabla)
+                                table_name = tabla
+                                break
                     
-                    # Delete from original table
-                    expediente.delete()
-                    archivados_count += 1
-                except ConciliacionExpedientes.DoesNotExist:
+                    if expediente:
+                        snapshot = {
+                            'letra': expediente.letra,
+                            'exp': expediente.exp,
+                            'anio': expediente.anio,
+                            'actor': expediente.actor,
+                            'demandado': expediente.demandado,
+                            'area_en_la_que_se_encuentra': expediente.area_en_la_que_se_encuentra,
+                        }
+                        
+                        # Guardar el expediente completo para restauración posterior
+                        Archivados.objects.create(
+                            expediente=f"{expediente.letra or ''} {expediente.exp or ''}/{expediente.anio or ''}".strip(),
+                            junta=expediente.area_en_la_que_se_encuentra or '',
+                            actor=expediente.actor or '',
+                            demandado=expediente.demandado or '',
+                            motivo=motivo,
+                            datos_expediente=snapshot,
+                        )
+                        
+                        # Delete from original table
+                        with connection.cursor() as cursor:
+                            cursor.execute(f"DELETE FROM `{table_name}` WHERE id = %s", [expediente_id])
+                        archivados_count += 1
+                except Exception:
                     continue
             
             # Registrar en bitácora
@@ -738,17 +943,22 @@ def obtener_expedientes_ajax(request):
             'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
         }, status=403)
     
-    expedientes = ConciliacionExpedientes.objects.all()
-    expedientes_list = [
-        {
-            'id': expediente.id,
-            'expediente': formatear_identificador_expediente(expediente),
-            'junta': expediente.area_en_la_que_se_encuentra,
-            'actor_nombre': expediente.actor,
-            'demandado_nombre': expediente.demandado,
-        }
-        for expediente in expedientes
-    ]
+    # Obtener de todas las tablas de periodo
+    periodos = obtener_periodos_disponibles()
+    expedientes_list = []
+    
+    for p in periodos:
+        tabla = f"expediente_{p}"
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT id, letra, exp, anio, actor, demandado, area_en_la_que_se_encuentra FROM `{tabla}`")
+            for row in cursor.fetchall():
+                expedientes_list.append({
+                    'id': row[0],
+                    'expediente': f"{row[1] or ''} {row[2] or ''}/{row[3] or ''}".strip() or f"Exp. {row[0]}",
+                    'junta': row[6],
+                    'actor_nombre': row[4],
+                    'demandado_nombre': row[5],
+                })
     
     return JsonResponse({'success': True, 'expedientes': expedientes_list})
 
@@ -767,7 +977,6 @@ def ver_archivados(request):
     return render(request, 'ver_archivados.html', {'archivados': archivados, 'empleado': empleado})
 
 def exportar_expedientes_excel(request):
-    # Verificar sesión
     empleado_id = request.session.get('empleado_id')
     if not empleado_id:
         messages.error(request, 'Debes iniciar sesión')
@@ -778,48 +987,48 @@ def exportar_expedientes_excel(request):
         messages.error(request, 'No tienes permiso para exportar expedientes.')
         return redirigir_a_error('No tienes permiso para exportar expedientes.')
     
-    # Obtener todos los expedientes de la tabla principal
-    expedientes = ConciliacionExpedientes.objects.all()
-    
-    # Crear el libro de Excel
     wb = Workbook()
-    ws = wb.active
-    ws.title = "Expedientes"
-    
-    # Estilos para el encabezado
+
     header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF", size=11)
     header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
-    
+
     campos_exportables = obtener_campos_exportables_expediente()
     headers = [etiqueta for _, etiqueta in campos_exportables]
-    
-    # Escribir encabezados
-    for col_num, header in enumerate(headers, 1):
-        cell = ws.cell(row=1, column=col_num)
-        cell.value = header
-        cell.fill = header_fill
-        cell.font = header_font
-        cell.alignment = header_alignment
-        ws.column_dimensions[cell.column_letter].width = 12
-    
     column_fields = [campo for campo, _ in campos_exportables]
-    
-    for row_num, exp in enumerate(expedientes, 2):
-        for col_num, field in enumerate(column_fields, 1):
-            value = getattr(exp, field, None) or ''
-            ws.cell(row=row_num, column=col_num).value = value
-    
-    # Preparar la respuesta HTTP
+
+    periodos = obtener_periodos_disponibles()
+
+    for idx, periodo in enumerate(periodos):
+        table_name = f"expediente_{periodo}"
+
+        if idx == 0:
+            ws = wb.active
+            ws.title = periodo.replace('_', ' ').title()
+        else:
+            ws = wb.create_sheet(title=periodo.replace('_', ' ').title())
+
+        for col_num, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col_num)
+            cell.value = header
+            cell.fill = header_fill
+            cell.font = header_font
+            cell.alignment = header_alignment
+            ws.column_dimensions[cell.column_letter].width = 12
+
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT {', '.join(column_fields)} FROM `{table_name}`")
+            for row_num, row in enumerate(cursor.fetchall(), 2):
+                for col_num, value in enumerate(row, 1):
+                    ws.cell(row=row_num, column=col_num).value = value or ''
+
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
     fecha_actual = datetime.now().strftime('%Y%m%d_%H%M%S')
     response['Content-Disposition'] = f'attachment; filename=expedientes_{fecha_actual}.xlsx'
-    
-    # Guardar el libro en la respuesta
+
     wb.save(response)
-    
     return response
 
 
@@ -898,20 +1107,30 @@ def restaurar_expediente(request):
                 'demandado': archivo.demandado,
                 'area_en_la_que_se_encuentra': archivo.junta,
             }
-
-        expediente_kwargs = {}
-        for field in ConciliacionExpedientes._meta.fields:
-            if field.name == 'id':
-                continue
-            expediente_kwargs[field.name] = datos_expediente.get(field.name)
-
-        expediente_restaurado = ConciliacionExpedientes.objects.create(**expediente_kwargs)
+        
+        periodo_seleccionado = request.session.get('periodo_actual') or 'enero_2026'
+        crear_tabla_expediente_periodo(periodo_seleccionado)
+        table_name = f"expediente_{periodo_seleccionado}"
+        
+        # Obtener el último id de la tabla del periodo
+        with connection.cursor() as cursor:
+            cursor.execute(f"SELECT MAX(id) FROM `{table_name}`")
+            last_id = cursor.fetchone()[0]
+            new_id = 1 if last_id is None else last_id + 1
+        
+        # Campos y valores para INSERT
+        fields = [f.name for f in ConciliacionExpedientes._meta.fields if f.name != 'id']
+        values = [datos_expediente.get(f, None) for f in fields]
+        
+        query = f"INSERT INTO `{table_name}` ({', '.join([f'`{f}`' for f in fields])}) VALUES ({', '.join(['%s'] * len(fields))})"
+        with connection.cursor() as cursor:
+            cursor.execute(query, values)
         
         # Registrar en bitácora
         registrar_accion(
             empleado, 
             'Restaurar expediente', 
-            f'Restauró el expediente {archivo.expediente} - Actor: {archivo.actor} vs Demandado: {archivo.demandado}',
+            f'Restauró el expediente {archivo.expediente} - Actor: {archivo.actor} vs Demandado: {archivo.demandado} en {periodo_seleccionado}',
             request
         )
         

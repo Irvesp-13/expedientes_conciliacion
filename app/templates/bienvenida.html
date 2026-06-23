@@ -5,9 +5,30 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-12">
-        <div class="card mt-5 shadow">
+        <div class="card shadow">
+            <div class="card-header text-white d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Tabla de Expedientes</h3>
+                {% if empleado.es_administrador %}
+                <a href="{% url 'crear_periodo' %}" class="btn btn-sm btn-success" title="Crear nuevo periodo">
+                    <i class="fas fa-calendar-plus"></i> Nuevo Periodo
+                </a>
+                {% endif %}
+            </div>
             <div class="card-header text-white">
-                <h3 class="card-title">Tabla de Expedientes</h3>
+                {% if periodos_disponibles %}
+                <div class="mt-2">
+                    <ul class="nav nav-tabs card-header-tabs">
+                        {% for periodo in periodos_disponibles %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if periodo.clave == periodo_actual %}active{% endif %}" 
+                               href="{% url 'bienvenida' %}?periodo={{ periodo.clave }}">
+                                {{ periodo.nombre }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
             </div>
             <div class="card-body">
                 <div class="row mb-4">
@@ -26,8 +47,8 @@
                 </div>
 
                 <!-- Tabla de expedientes -->
-<div class="table-responsive" style="max-height: 530px; overflow-y: auto;">
-    <table class="table table-bordered table-striped table-hover table-sm" id="expedientesTable">
+                <div class="table-responsive" style="max-height: 530px; overflow-y: auto;">
+                    <table class="table table-bordered table-striped table-hover table-sm" id="expedientesTable">
         <thead style="position: sticky; top: 0; background-color: #315527; z-index: 1;">
             <tr>
                 <th style="width: 6%; text-align: center;">Letra</th>
@@ -79,6 +100,48 @@
                         </tbody>
                     </table>
                 </div>
+                
+                <!-- Paginación -->
+                {% if expedientes.has_other_pages %}
+                <nav aria-label="Navegación de páginas" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        {% if expedientes.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ expedientes.previous_page_number }}&periodo={{ periodo_actual }}" aria-label="Anterior">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&laquo;</span>
+                        </li>
+                        {% endif %}
+
+                        {% for num in expedientes.paginator.page_range %}
+                            {% if expedientes.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > expedientes.number|add:'-3' and num < expedientes.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}&periodo={{ periodo_actual }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if expedientes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ expedientes.next_page_number }}&periodo={{ periodo_actual }}" aria-label="Siguiente">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">&raquo;</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    <div class="text-center text-muted mt-2">
+                        Página {{ expedientes.number }} de {{ expedientes.paginator.num_pages }} ({{ expedientes.paginator.count }} expedientes)
+                    </div>
+                </nav>
+                {% endif %}
             </div>
         </div>
     </div>

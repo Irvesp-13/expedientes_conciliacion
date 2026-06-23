@@ -1,4 +1,46 @@
-from django.db import models
+from django.db import models, connection
+
+def crear_tabla_expediente_periodo(periodo):
+    """
+    Crea la tabla de expedientes para el periodo especificado.
+    Tablas se llaman: expediente_enero_2026, expediente_febrero_2026, etc.
+    """
+    table_name = f"expediente_{periodo}"
+    
+    with connection.cursor() as cursor:
+        cursor.execute(f"SHOW TABLES LIKE '{table_name}'")
+        tabla_existe = cursor.fetchone() is not None
+    
+    if not tabla_existe:
+        with connection.cursor() as cursor:
+            cursor.execute(f"""
+                CREATE TABLE `{table_name}` LIKE `expediente`
+            """)
+
+def obtener_periodos_disponibles():
+    """Obtiene lista de periodos que tienen tablas creadas"""
+    with connection.cursor() as cursor:
+        cursor.execute("SHOW TABLES LIKE 'expediente_%'")
+        tablas = cursor.fetchall()
+    
+    periodos = []
+    for tabla in tablas:
+        nombre_tabla = tabla[0]
+        periodo = nombre_tabla.replace('expediente_', '')
+        periodos.append(periodo)
+    
+    return sorted(periodos, reverse=True)
+
+def get_periodo_actual(request):
+    """Obtiene el periodo actual de la sesión o devuelve el predeterminado"""
+    periodo = request.session.get('periodo_actual')
+    if not periodo:
+        return 'enero_2026'
+    return periodo
+
+def set_periodo_actual(request, periodo):
+    """Establece el periodo actual en la sesión"""
+    request.session['periodo_actual'] = periodo
 
 class Empleado(models.Model):
     class Rol(models.IntegerChoices):
@@ -141,9 +183,9 @@ class ConciliacionExpedientes(models.Model):
 
 
 class CargaDescarga(models.Model):
-    id = models.AutoField(primary_key=True)  # This will auto-increment
+    id = models.AutoField(primary_key=True)
     empleado = models.ForeignKey(Empleado, on_delete=models.CASCADE)
-    expediente = models.ForeignKey(ConciliacionExpedientes, on_delete=models.CASCADE)
+    expediente_id = models.IntegerField()
     fecha = models.DateTimeField(auto_now_add=True)
     nombre_carga = models.CharField(max_length=255)
     junta_carga = models.CharField(max_length=255, blank=True, default='')
@@ -154,7 +196,7 @@ class CargaDescarga(models.Model):
 
 class Archivados(models.Model):
     id_archivo = models.AutoField(primary_key=True)
-    expediente = models.CharField(max_length=255)  # Changed from ForeignKey to CharField
+    expediente = models.CharField(max_length=255)
     junta = models.CharField(max_length=255)
     actor = models.CharField(max_length=255)
     demandado = models.CharField(max_length=255)
@@ -169,8 +211,8 @@ class Archivados(models.Model):
 class Bitacora(models.Model):
     id = models.AutoField(primary_key=True)
     empleado = models.ForeignKey(Empleado, on_delete=models.SET_NULL, null=True)
-    accion = models.CharField(max_length=255)  # Tipo de acción (crear, editar, eliminar, etc.)
-    descripcion = models.TextField()  # Descripción detallada de la acción
+    accion = models.CharField(max_length=255)
+    descripcion = models.TextField()
     fecha_hora = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
 
@@ -181,3 +223,11 @@ class Bitacora(models.Model):
     def __str__(self):
         empleado_nombre = self.empleado.nombre if self.empleado else 'Usuario eliminado'
         return f"{self.fecha_hora} - {empleado_nombre} - {self.accion}"
+
+
+# Meses en español
+MESES_ESPANOL = {
+    1: 'enero', 2: 'febrero', 3: 'marzo', 4: 'abril',
+    5: 'mayo', 6: 'junio', 7: 'julio', 8: 'agosto',
+    9: 'septiembre', 10: 'octubre', 11: 'noviembre', 12: 'diciembre'
+}

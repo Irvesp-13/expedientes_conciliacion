@@ -21,4 +21,5 @@ urlpatterns = [
     path('ver-bitacora/', views.ver_bitacora, name='ver_bitacora'),
     path('restaurar-expediente/', views.restaurar_expediente, name='restaurar_expediente'),
     path('eliminar-permanente/', views.eliminar_permanente, name='eliminar_permanente'),
+    path('crear-periodo/', views.crear_periodo, name='crear_periodo'),
 ]

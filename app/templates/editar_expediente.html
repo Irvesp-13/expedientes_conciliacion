@@ -8,7 +8,7 @@
         <div class="card mt-2 shadow">
             <div class="card-header text-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                    <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-arrow-left"></i> Regresar
                     </a>
                     <h3 class="card-title mb-0">Editar Expediente</h3>
@@ -16,7 +16,7 @@
                 </div>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" action="{% url 'editar_expediente' expediente.id %}?periodo={{ periodo_actual }}">
                     {% csrf_token %}
 
                     <!-- DATOS GENERALES -->
@@ -212,7 +212,7 @@
                             <button type="submit" class="btn btn-success btn-lg">
                                 <i class="fas fa-save"></i> Guardar Cambios
                             </button>
-                            <a href="{% url 'bienvenida' %}" class="btn btn-secondary btn-lg">
+                            <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-secondary btn-lg">
                                 <i class="fas fa-times"></i> Cancelar
                             </a>
                         </div>

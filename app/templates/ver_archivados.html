@@ -8,7 +8,7 @@
         <div class="card mt-5 shadow">
             <div class="card-header text-white">
                 <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'bienvenida' %}" class="btn btn-outline-light btn-sm">
+                    <a href="{% url 'bienvenida' %}?periodo={{ request.session.periodo_actual|default:'enero_2026' }}" class="btn btn-outline-light btn-sm">
                         <i class="fas fa-arrow-left"></i> Regresar
                     </a>
                     <h3 class="card-title mb-0">Expedientes Archivados</h3>

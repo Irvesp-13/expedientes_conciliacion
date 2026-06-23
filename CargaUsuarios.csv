@@ -1,0 +1,26 @@
+id,usuario,nombre,clave_empleado,rol,id_plaza,puesto
+1,EderMG,Eder Josue Mora Gomez,0026796,1,105-72,Presidente
+2,KarlaHE,Karla Rosalia Hernandez E.,0039593,1,108-270,Secretaria General
+3,Admin,Admin,1111111,1,100-001,Desarrollador del Sistema
+4,MariaBP,Maria De Los Angeles Bastida Perez,0018744,2,226-133,Analista Administrativo
+5,RocioSL,Rocio Solano Lara,0021568,2,228-656,Secretaria
+6,AdrianoC,Adriana Ortega Chavez,0041004,2,303-234,Tecnico Operativo
+7,ErikaMC,Erika Fabiola Marron Cardenas,0028920,2,228-659,Mecanografa
+8,NoemiCS,Noemi Carrillo Sanchez,0034150,2,303-214,Oficial De Partes
+9,MarthaBB,Martha Citlali Baltazar Benitez,0043357,2,303-208,Actuario C
+10,MariaSR,Maria Elena Salazar Rosales,0036300,3,301-227,Secretario De Acuerdos
+11,AxelNC,Axel Damian Navarro Camacho,0042899,3,604-266,Actuario C
+12,EduardoRE,Eduardo Romero Escamilla,0042850,3,303-206,Actuario C
+13,GuadalupeOG,Guadalupe Nenethzi Orozco Garcia,0039406,3,303-245,Actuario C
+14,JoseVC,Jose Antonio Virto Cambray,0039801,3,301-202,Secretario De Acuerdos
+15,RafaelPS,Rafael Pineda Sosa,0039849,3,301-221,Auxiliar Juridico
+16,FanyRA,Fany Lizbeth Roque Arizmendi,0040151,3,301-215,Secretario De Acuerdos
+17,JaquelineGM,Jaqueline Guzman Macedo,0040569,3,303-231,Actuario C
+18,VictorPD,Victor Hugo Pastenes De Labra,0019844,3,228-647,Administrativo
+19,LuisBB,Luis Gerardo Blanco Bahena,0040728,3,303-220,Secretario De Acuerdos
+20,JaimeMN,Jaime Gabriel Martinez Nepomuceno,0040732,3,303-222,Actuario C
+21,LuzGA,Luz Denisse Garcia Ayala,0028370,3,301-194,Dictaminador
+22,DhamarFB,Dhamar Itzel Flores Barona,0041177,3,303-221,Actuario C
+23,AdrianaRP,Adriana Rayon Perez,0041269,3,301-193,Secretario De Acuerdos
+24,YajahiraMC,Yajahira Erendira Mendoza Cardozo,0036757,3,301-223,Secretario De Acuerdos
+25,PatriciaLN,Patricia Lopez Neri,0017650,3,228-645,Secretaria
