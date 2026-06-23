@@ -11,10 +11,20 @@ PERIODO = 'enero_2026'
 TABLE_NAME = f'expediente_{PERIODO}'
 CSV_PATH = 'ExpedientesEnero.csv'
 
-with open(CSV_PATH, newline='', encoding='latin-1') as f:
-    reader = csv.DictReader(f)
+# Intentar varias codificaciones
+for encoding in ['utf-8-sig', 'latin-1', 'cp1252']:
+    try:
+        f = open(CSV_PATH, newline='', encoding=encoding)
+        reader = csv.DictReader(f)
+        rows = list(reader)
+        f.close()
+        break
+    except UnicodeDecodeError:
+        continue
+else:
+    raise ValueError("No se pudo leer el CSV con ninguna codificación")
     count = 0
-    for row in reader:
+    for row in rows:
         id_val = int(row['id']) if row.get('id') else None
         
         # Campos con sus valores (convertir 1/0 o vacío/null)
