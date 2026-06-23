@@ -11,7 +11,7 @@ PERIODO = 'enero_2026'
 TABLE_NAME = f'expediente_{PERIODO}'
 CSV_PATH = 'ExpedientesEnero.csv'
 
-with open(CSV_PATH, newline='', encoding='utf-8') as f:
+with open(CSV_PATH, newline='', encoding='latin-1') as f:
     reader = csv.DictReader(f)
     count = 0
     for row in reader:
