@@ -23,8 +23,12 @@ for encoding in ['utf-8-sig', 'latin-1', 'cp1252']:
         continue
 else:
     raise ValueError("No se pudo leer el CSV con ninguna codificación")
-    count = 0
-    for row in rows:
+    # Crear tabla si no existe (copiando estructura de tabla expediente base)
+with connection.cursor() as cursor:
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS `{TABLE_NAME}` LIKE `expediente`")
+
+count = 0
+for row in rows:
         id_val = int(row['id']) if row.get('id') else None
         
         # Campos con sus valores (convertir 1/0 o vacío/null)
