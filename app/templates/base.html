@@ -4,18 +4,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Expedientes Conciliación{% endblock %}</title>
+    <title>{% block title %}CADEX - Conciliación y Arbitraje{% endblock %}</title>
     {% load static %}
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/fontawesome.min.css' %}" rel="stylesheet">
     <style>
         :root {
-            --color-primary: #315527;
-            --color-secondary: #9c7a46;
-            --color-light: #fff6e9;
-            --color-white: #ffffff;
+            --color-primary: #1a472a;
+            --color-primary-light: #2d6a4f;
+            --color-secondary: #b8860b;
+            --color-secondary-light: #daa520;
+            --color-bg: #f4f6f8;
+            --color-surface: #ffffff;
             --color-text: #2c3e50;
-            --color-border: #e0e0e0;
+            --color-text-muted: #6c757d;
+            --color-border: #dee2e6;
+            --color-success: #28a745;
+            --color-danger: #dc3545;
+            --color-warning: #ffc107;
+            --color-info: #17a2b8;
+            --shadow-sm: 0 0.125rem 0.5rem rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
+            --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.15);
+            --radius: 0.5rem;
+            --transition: all 0.25s ease;
         }
 
         * {
@@ -25,155 +37,312 @@
         }
 
         body {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--color-bg);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             color: var(--color-text);
-            padding-top: 70px;
             min-height: 100vh;
+            padding-top: 70px;
         }
 
         .navbar {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #264119 100%);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
             border-bottom: 3px solid var(--color-secondary);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-md);
+            padding: 0.6rem 1rem;
         }
 
         .navbar-brand {
-            font-weight: 600;
-            font-size: 1.1rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: 0.5px;
+            color: #fff !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand i {
+            font-size: 1.4rem;
+            color: var(--color-secondary-light);
+        }
+
+        .navbar-center-text {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1rem;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9) !important;
+            white-space: nowrap;
+        }
+
+        .nav-link {
+            font-weight: 500;
             letter-spacing: 0.3px;
+            transition: var(--transition);
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-menu-admin {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-secondary-light) 100%);
+            color: #fff !important;
+            font-weight: 600;
+            padding: 0.55rem 1.3rem;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            border: none;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-menu-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: #fff !important;
+            background: linear-gradient(135deg, var(--color-secondary-light) 0%, var(--color-secondary) 100%);
+        }
+
+        .btn-cerrar-sesion {
+            background: var(--color-danger);
+            color: #fff !important;
+            font-weight: 500;
+            padding: 0.55rem 1.3rem;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-cerrar-sesion:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: #fff !important;
+        }
+
+        .btn-iniciar-sesion {
+            background: var(--color-secondary);
+            color: #fff !important;
+            font-weight: 500;
+            padding: 0.55rem 1.3rem;
+            border-radius: var(--radius);
+            transition: var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-iniciar-sesion:hover {
+            background: var(--color-secondary-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            color: #fff !important;
+        }
+
+        .dropdown-menu {
+            border-radius: var(--radius);
+            border: none;
+            box-shadow: var(--shadow-lg);
+            padding: 0.6rem 0;
+            min-width: 260px;
+            animation: fadeInDown 0.2s ease;
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            color: var(--color-text);
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: var(--color-primary);
+            padding-left: 1.8rem;
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .dropdown-divider {
+            margin: 0.5rem 0;
+            border-top-color: var(--color-border);
         }
 
         .card {
             border: none;
-            border-radius: 2px;
-            overflow: hidden;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            background: var(--color-surface);
+            margin-bottom: 1.5rem;
         }
 
         .card-header {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #264119 100%);
-            color: var(--color-white);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: #fff;
             border-bottom: 2px solid var(--color-secondary);
             padding: 1rem 1.5rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
-        .card-header h3 {
+        .card-header h3,
+        .card-header h4,
+        .card-header .card-title {
             margin: 0;
             font-weight: 600;
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             letter-spacing: 0.3px;
+        }
+
+        .card-header .btn-outline-light {
+            border: 1.5px solid rgba(255, 255, 255, 0.7);
+            color: #fff;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .card-header .btn-outline-light:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #fff;
         }
 
         .card-body {
-            background-color: var(--color-white);
-            padding: 1.5rem;
+            padding: 1.75rem;
+            background: var(--color-surface);
+        }
+
+        .card-body p {
+            color: var(--color-text-muted);
+            line-height: 1.6;
         }
 
         .container {
-            background-color: transparent;
-            padding: 20px;
-            border-radius: 0;
-            box-shadow: none;
+            padding: 1.5rem 1rem;
         }
 
         .btn {
-            border-radius: 2px;
+            border-radius: var(--radius);
             font-weight: 500;
             letter-spacing: 0.3px;
-            padding: 0.5rem 1rem;
-            transition: all 0.2s ease;
+            padding: 0.6rem 1.1rem;
+            transition: var(--transition);
             border: none;
+            box-shadow: var(--shadow-sm);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
         }
 
         .btn-agregar {
-            background-color: var(--color-primary);
-            color: var(--color-white);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: #fff;
         }
 
         .btn-agregar:hover {
-            background-color: #264119;
-            color: var(--color-white);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+            color: #fff;
         }
 
         .btn-base {
-            background-color: var(--color-secondary);
-            color: var(--color-white);
+            background: var(--color-secondary);
+            color: #fff;
         }
 
         .btn-base:hover {
-            background-color: #8a6a3d;
-            color: var(--color-white);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: var(--color-secondary-light);
+            color: #fff;
         }
 
         .btn-primary {
-            background-color: #2980b9;
+            background: #2980b9;
+            color: #fff;
         }
 
         .btn-primary:hover {
-            background-color: #1f6391;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: #1f6391;
+            color: #fff;
         }
 
         .btn-warning {
-            background-color: #f39c12;
+            background: #f39c12;
+            color: #fff;
         }
 
         .btn-warning:hover {
-            background-color: #d68910;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: #d68910;
+            color: #fff;
         }
 
         .btn-danger {
-            background-color: #c0392b;
+            background: #c0392b;
+            color: #fff;
         }
 
         .btn-danger:hover {
-            background-color: #a93226;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: #a93226;
+            color: #fff;
         }
 
         .btn-success {
-            background-color: #27ae60;
+            background: #27ae60;
+            color: #fff;
         }
 
         .btn-success:hover {
-            background-color: #229954;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: #229954;
+            color: #fff;
         }
 
         .btn-info {
-            background-color: #16a085;
+            background: #16a085;
+            color: #fff;
         }
 
         .btn-info:hover {
-            background-color: #138d75;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            background: #138d75;
+            color: #fff;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #e9ecef;
+            border-color: #adb5bd;
         }
 
         thead {
-            background: linear-gradient(135deg, var(--color-primary) 0%, #264119 100%);
-            color: var(--color-white);
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: #fff;
         }
 
         thead th {
             font-weight: 600;
             text-transform: uppercase;
-            font-size: 0.85rem;
-            letter-spacing: 0.5px;
+            font-size: 0.8rem;
+            letter-spacing: 0.6px;
             border: none;
+            padding: 0.9rem 0.75rem;
         }
 
         .table {
             margin-bottom: 0;
+            font-size: 0.95rem;
         }
 
         .table-bordered {
@@ -184,6 +353,7 @@
         .table-bordered th {
             border: 1px solid var(--color-border);
             padding: 0.75rem;
+            vertical-align: middle;
         }
 
         .table-striped tbody tr:nth-of-type(odd) {
@@ -193,167 +363,330 @@
         .table-hover tbody tr:hover {
             background-color: #e9ecef;
             cursor: pointer;
+            transition: background-color 0.2s ease;
         }
 
         .form-control {
-            border-radius: 2px;
-            border: 1px solid var(--color-border);
-            padding: 0.6rem 0.75rem;
+            border-radius: var(--radius);
+            border: 1.5px solid var(--color-border);
+            padding: 0.65rem 0.85rem;
             font-size: 0.95rem;
+            transition: var(--transition);
+            box-shadow: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 0.2rem rgba(26, 71, 42, 0.12);
+            outline: none;
+        }
+
+        .form-control::placeholder {
+            color: #adb5bd;
         }
 
         select.form-control {
             height: auto;
             min-height: calc(2.5rem + 2px);
-            line-height: 1.4;
+            line-height: 1.5;
             padding-top: 0.5rem;
             padding-bottom: 0.5rem;
         }
 
-        .form-control:focus {
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 0.2rem rgba(49, 85, 39, 0.15);
-        }
-
-        .shadow {
-            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1) !important;
-        }
-
-        .alert {
-            border-radius: 2px;
-            border-left: 4px solid;
-        }
-
-        .alert-danger {
-            border-left-color: #c0392b;
-            background-color: #fadbd8;
-            color: #7b241c;
-        }
-
-        .alert-success {
-            border-left-color: #27ae60;
-            background-color: #d5f4e6;
-            color: #1e8449;
-        }
-
-        .modal-content {
-            border-radius: 2px;
-            border: none;
-        }
-
-        .modal-header {
-            background-color: var(--color-primary);
-            color: var(--color-white);
-            border-bottom: 2px solid var(--color-secondary);
-        }
-
-        .modal-title {
+        .form-label {
             font-weight: 600;
+            color: var(--color-text);
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .form-check-input {
+            width: 1.2rem;
+            height: 1.2rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            border: 2px solid var(--color-border);
+            transition: var(--transition);
+        }
+
+        .form-check-input:checked {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(26, 71, 42, 0.15);
+        }
+
+        .form-check-label {
+            cursor: pointer;
+            user-select: none;
+            margin-left: 0.3rem;
+            font-size: 0.95rem;
+            color: var(--color-text);
         }
 
         .input-group-text {
             background-color: var(--color-primary);
-            color: var(--color-white);
-            border: 1px solid var(--color-primary);
-        }
-
-        /* Estilos para el menú hamburguesa */
-        .btn-menu-admin {
-            background: linear-gradient(135deg, var(--color-secondary) 0%, #8a6a3d 100%);
-            color: var(--color-white) !important;
-            font-weight: 600;
-            padding: 0.5rem 1.2rem;
-            border-radius: 5px;
-            margin-right: 0.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .btn-menu-admin:hover {
-            background: linear-gradient(135deg, #8a6a3d 0%, var(--color-secondary) 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .btn-cerrar-sesion {
-            background-color: #c0392b;
-            color: var(--color-white) !important;
+            color: #fff;
+            border: 1.5px solid var(--color-primary);
             font-weight: 500;
-            padding: 0.5rem 1.2rem;
-            border-radius: 5px;
-            transition: all 0.3s ease;
         }
 
-        .btn-cerrar-sesion:hover {
-            background-color: #a93226;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        .shadow {
+            box-shadow: var(--shadow-md) !important;
         }
 
-        .btn-iniciar-sesion {
-            background-color: var(--color-secondary);
-            color: var(--color-white) !important;
+        .alert {
+            border-radius: var(--radius);
+            border-left: 4px solid;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            animation: slideIn 0.3s ease;
             font-weight: 500;
-            padding: 0.5rem 1.2rem;
-            border-radius: 5px;
-            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
         }
 
-        .btn-iniciar-sesion:hover {
-            background-color: #8a6a3d;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        .dropdown-menu {
-            border-radius: 8px;
+        .alert-danger {
+            border-left-color: var(--color-danger);
+            background-color: #fde8e8;
+            color: #721c24;
+        }
+
+        .alert-success {
+            border-left-color: var(--color-success);
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .alert-warning {
+            border-left-color: var(--color-warning);
+            background-color: #fff8e1;
+            color: #856404;
+        }
+
+        .alert-info {
+            border-left-color: var(--color-info);
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .modal-content {
+            border-radius: var(--radius);
             border: none;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-            padding: 0.5rem 0;
-            min-width: 250px;
+            box-shadow: var(--shadow-lg);
         }
 
-        .dropdown-item {
-            padding: 0.7rem 1.5rem;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-        }
-
-        .dropdown-item i {
-            width: 20px;
-            margin-right: 8px;
-        }
-
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-            color: var(--color-primary);
-            padding-left: 1.8rem;
-        }
-
-        .dropdown-divider {
-            margin: 0.5rem 0;
-            border-top-color: #e0e0e0;
-        }
-
-        .navbar-brand i {
-            margin-right: 8px;
-        }
-
-        /* Centrar el título en la navbar */
-        .navbar-center-text {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 1.1rem;
+        .modal-header {
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+            color: #fff;
+            border-bottom: 2px solid var(--color-secondary);
             font-weight: 600;
-            color: var(--color-white) !important;
         }
 
-        /* Responsive */
+        .modal-title {
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--color-border);
+            background: #f8f9fa;
+        }
+
+        .badge {
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            padding: 0.5em 0.8em;
+            border-radius: 0.35rem;
+            font-size: 0.85rem;
+        }
+
+        .badge-success {
+            background-color: var(--color-success) !important;
+            color: #fff !important;
+            box-shadow: 0 1px 3px rgba(40, 167, 69, 0.3);
+        }
+
+        .badge-secondary {
+            background-color: #e9ecef !important;
+            color: #495057 !important;
+        }
+
+        .badge-primary {
+            background-color: #2980b9 !important;
+            color: #fff !important;
+        }
+
+        .badge-info {
+            background-color: var(--color-info) !important;
+            color: #fff !important;
+        }
+
+        .badge-warning {
+            background-color: var(--color-warning) !important;
+            color: #212529 !important;
+        }
+
+        .badge-danger {
+            background-color: var(--color-danger) !important;
+            color: #fff !important;
+        }
+
+        .pagination {
+            gap: 0.2rem;
+        }
+
+        .page-link {
+            border-radius: var(--radius) !important;
+            margin: 0 0.1rem;
+            border: 1px solid var(--color-border);
+            color: var(--color-primary);
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .page-link:hover {
+            background-color: #e9ecef;
+            border-color: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        .page-item.active .page-link {
+            background: var(--color-primary);
+            border-color: var(--color-primary);
+            color: #fff;
+        }
+
+        .card-header-tabs .nav-link {
+            color: rgba(255,255,255,0.95);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 0.35rem 0.35rem 0 0;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: var(--transition);
+            background: rgba(0,0,0,0.25);
+        }
+
+        .card-header-tabs .nav-link:hover {
+            color: #fff;
+            background: rgba(0,0,0,0.4);
+            border-color: rgba(255,255,255,0.6);
+        }
+
+        .card-header-tabs .nav-link.active {
+            color: #fff;
+            background: rgba(0,0,0,0.5);
+            border-color: rgba(255,255,255,0.7);
+            font-weight: 600;
+            box-shadow: inset 0 -3px 0 var(--color-secondary);
+        }
+
+        strong {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        h5.section-title {
+            color: #1f2937;
+            font-weight: 700;
+            font-size: 1.05rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 1rem !important;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #f9fafb;
+            padding: 0.6rem 0.9rem;
+            border-radius: 0.35rem;
+            border-left: 4px solid #9ca3af;
+        }
+
+        h5.section-title i {
+            color: #4b5563;
+            font-size: 1rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--color-text-muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Sticky header for tables */
+        .table-responsive-sticky {
+            max-height: 530px;
+            overflow-y: auto;
+        }
+
+        /* Login page specific */
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 50%, #1a472a 100%);
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            border-radius: calc(var(--radius) * 1.5);
+            box-shadow: var(--shadow-lg);
+            border: none;
+            overflow: hidden;
+        }
+
+        .login-card .card-header {
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .login-card .card-body {
+            padding: 2rem 1.75rem;
+        }
+
+        .login-card .form-control {
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+
+        .login-card .btn {
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: var(--radius);
+        }
+
         @media (max-width: 991px) {
+            .navbar-center-text {
+                display: none;
+            }
+
             .dropdown-menu {
                 margin-top: 0.5rem;
+                box-shadow: none;
+                border: 1px solid var(--color-border);
             }
-            
+
             .btn-menu-admin,
             .btn-cerrar-sesion,
             .btn-iniciar-sesion {
@@ -362,12 +695,54 @@
                 text-align: left;
                 margin: 0.25rem 0;
             }
+
+            .card-body {
+                padding: 1.25rem;
+            }
+
+            .container {
+                padding: 1rem 0.5rem;
+            }
+        }
+
+        /* Swal overrides to match theme */
+        .swal2-popup {
+            border-radius: var(--radius) !important;
+            box-shadow: var(--shadow-lg) !important;
+        }
+
+        .swal2-confirm {
+            border-radius: var(--radius) !important;
+            font-weight: 600 !important;
+        }
+
+        .swal2-cancel {
+            border-radius: var(--radius) !important;
+            font-weight: 600 !important;
+        }
+
+        .btn-sm {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.85rem;
+            border-radius: var(--radius);
+        }
+
+        .btn-xs {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            border-radius: 0.25rem;
+        }
+
+        .table-sm td,
+        .table-sm th {
+            padding: 0.5rem 0.6rem;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
-    <!-- Barra de navegación -->
+    {% if request.session.empleado_id %}
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top shadow">
         <a class="navbar-brand" href="{% url 'bienvenida' %}">
             <i class="fas fa-balance-scale"></i> <strong>CADEX</strong>
@@ -381,13 +756,11 @@
                 Conciliación y Arbitraje | Junta Local 3
             </span>
             <ul class="navbar-nav ml-auto">
-                {% if request.session.empleado_id %}
-                <!-- Menú de acciones -->
                 <li class="nav-item dropdown">
-<a class="nav-link dropdown-toggle btn-menu-admin" href="#" id="navbarDropdown" 
+                    <a class="nav-link dropdown-toggle btn-menu-admin" href="#" id="navbarDropdown"
                         role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
                         data-periodo="{{ request.session.periodo_actual|default:'enero_2026' }}">
-                            <i class="fas fa-bars"></i>
+                        <i class="fas fa-bars"></i>
                         {% if empleado.puede_gestionar_usuarios %}
                             Menú de Administración
                         {% else %}
@@ -396,123 +769,103 @@
                     </a>
                     <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
                         {% if empleado.puede_gestionar_usuarios %}
-                        <!-- Opciones para administradores -->
                         <a class="dropdown-item" href="{% url 'bienvenida' %}">
-                            <i class="fas fa-home text-primary"></i> Inicio
+                            <i class="fas fa-home"></i> Inicio
                         </a>
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="{% url 'agregar_expediente' %}">
-                            <i class="fas fa-plus text-success"></i> Agregar Expediente
+                            <i class="fas fa-plus"></i> Agregar Expediente
                         </a>
                         <a class="dropdown-item" href="{% url 'ver_cargas' %}">
-                            <i class="fas fa-file-upload text-info"></i> Ver Cargas
+                            <i class="fas fa-file-upload"></i> Ver Cargas
                         </a>
                         {% if empleado.puede_archivar_expedientes %}
                         <a class="dropdown-item" href="#" onclick="abrirModalArchivoMultiple(); return false;">
-                            <i class="fas fa-archive text-warning"></i> Archivar
+                            <i class="fas fa-archive"></i> Archivar
                         </a>
                         <a class="dropdown-item" href="{% url 'ver_archivados' %}">
-                            <i class="fas fa-folder-open text-secondary"></i> Ver Archivados
+                            <i class="fas fa-folder-open"></i> Ver Archivados
                         </a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
                         {% if empleado.puede_exportar_expedientes %}
                         <a class="dropdown-item" href="{% url 'exportar_expedientes_excel' %}">
-                            <i class="fas fa-file-excel text-success"></i> Exportar a Excel
+                            <i class="fas fa-file-excel"></i> Exportar a Excel
                         </a>
                         <div class="dropdown-divider"></div>
                         {% endif %}
                         <a class="dropdown-item" href="{% url 'crear_empleado' %}">
-                            <i class="fas fa-user-plus text-primary"></i> Crear Empleado
+                            <i class="fas fa-user-plus"></i> Crear Empleado
                         </a>
                         <a class="dropdown-item" href="{% url 'ver_bitacora' %}">
-                            <i class="fas fa-clipboard-list text-info"></i> Bitácora del Sistema
+                            <i class="fas fa-clipboard-list"></i> Bitácora del Sistema
                         </a>
                         {% else %}
-                        <!-- Opciones para empleados -->
                         <a class="dropdown-item" href="{% url 'bienvenida' %}">
-                            <i class="fas fa-home text-primary"></i> Inicio
+                            <i class="fas fa-home"></i> Inicio
                         </a>
                         <a class="dropdown-item" href="{% url 'ver_cargas' %}">
-                            <i class="fas fa-file-upload text-info"></i> Ver Cargas
+                            <i class="fas fa-file-upload"></i> Ver Cargas
                         </a>
                         {% if empleado.puede_archivar_expedientes %}
                         <a class="dropdown-item" href="#" onclick="abrirModalArchivoMultiple(); return false;">
-                            <i class="fas fa-archive text-warning"></i> Archivar
+                            <i class="fas fa-archive"></i> Archivar
                         </a>
                         <a class="dropdown-item" href="{% url 'ver_archivados' %}">
-                            <i class="fas fa-folder-open text-secondary"></i> Ver Archivados
+                            <i class="fas fa-folder-open"></i> Ver Archivados
                         </a>
                         {% endif %}
                         <div class="dropdown-divider"></div>
                         {% if empleado.puede_exportar_expedientes %}
                         <a class="dropdown-item" href="{% url 'exportar_expedientes_excel' %}">
-                            <i class="fas fa-file-excel text-success"></i> Exportar a Excel
+                            <i class="fas fa-file-excel"></i> Exportar a Excel
                         </a>
                         {% endif %}
                         {% endif %}
                     </div>
                 </li>
-                <!-- Botón "Cerrar sesión" -->
                 <li class="nav-item">
                     <a class="nav-link btn-cerrar-sesion" href="{% url 'cerrar_sesion' %}">
                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </a>
                 </li>
-                {% else %}
-                <!-- Botón "Iniciar sesión" -->
-                <li class="nav-item">
-                    <a class="nav-link btn-iniciar-sesion" href="{% url 'iniciar_sesion' %}">
-                        <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
-                    </a>
-                </li>
-                {% endif %}
             </ul>
         </div>
     </nav>
+    {% endif %}
 
-    <!-- Contenido de la página -->
     <div class="container">
+        {% if messages %}
+        <div class="messages-wrapper">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" role="alert">
+                {% if message.tags == 'success' %}
+                <i class="fas fa-check-circle"></i>
+                {% elif message.tags == 'error' %}
+                <i class="fas fa-times-circle"></i>
+                {% elif message.tags == 'warning' %}
+                <i class="fas fa-exclamation-triangle"></i>
+                {% else %}
+                <i class="fas fa-info-circle"></i>
+                {% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         {% block content %}
         {% endblock %}
     </div>
 
-    <!-- Scripts de Bootstrap -->
     <script src="{% static 'js/jquery.min.js' %}"></script>
     <script src="{% static 'js/popper.min.js' %}"></script>
     <script src="{% static 'js/bootstrap.min.js' %}"></script>
-
     <script src="{% static 'js/sweetalert2.min.js' %}"></script>
 
     <script>
         const Swal = window.Swal;
-        
-        // Actualizar enlaces del menú con el periodo actual
-        function actualizarEnlacesConPeriodo() {
-            const periodo = '{{ request.session.periodo_actual|default:"enero_2026" }}';
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentPeriodo = urlParams.get('periodo') || periodo;
-            
-            const enlaceAgregar = document.querySelector('a[href="{% url "agregar_expediente" %}"]');
-            if (enlaceAgregar) {
-                const href = new URL(enlaceAgregar.href, window.location.origin);
-                if (!href.searchParams.has('periodo')) {
-                    href.searchParams.set('periodo', currentPeriodo);
-                    enlaceAgregar.href = href.toString();
-                }
-            }
-            
-            const enlaceExportar = document.querySelector('a[href="{% url "exportar_expedientes_excel" %}"]');
-            if (enlaceExportar) {
-                const href = new URL(enlaceExportar.href, window.location.origin);
-                href.searchParams.set('periodo', currentPeriodo);
-                enlaceExportar.href = href.toString();
-            }
-        }
-        
-        // Ejecutar al cargar
-        actualizarEnlacesConPeriodo();
-        
+
         function getCookie(name) {
             const cookies = document.cookie.split(';');
             for (const cookie of cookies) {
@@ -523,36 +876,58 @@
             }
             return null;
         }
-        
+
         function getCsrfToken() {
             return '{{ csrf_token }}' || getCookie('csrftoken');
         }
-        
-        window.addEventListener('DOMContentLoaded', function () {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const tags = alert.classList;
-                let icon = 'info';
-                if (tags.contains('alert-success')) icon = 'success';
-                else if (tags.contains('alert-danger')) icon = 'error';
-                else if (tags.contains('alert-warning')) icon = 'warning';
-                else if (tags.contains('alert-info')) icon = 'info';
-                
-                Swal.fire({
-                    icon: icon,
-                    title: icon === 'success' ? 'Éxito' : icon === 'error' ? 'Error' : icon === 'warning' ? 'Atención' : 'Información',
-                    text: alert.textContent,
-                    confirmButtonText: 'Aceptar',
-                    timer: 4000,
-                    timerProgressBar: true,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false
-                });
-                alert.remove();
+
+        function handleFetchResponse(response) {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        }
+
+        function swalSuccess(message, title) {
+            title = title || 'Éxito';
+            return Swal.fire({
+                icon: 'success',
+                title: title,
+                text: message,
+                confirmButtonText: 'Aceptar',
+                timer: 3500,
+                timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
             });
-        });
-        
+        }
+
+        function swalError(message, title) {
+            title = title || 'Error';
+            return Swal.fire({
+                icon: 'error',
+                title: title,
+                text: message,
+                confirmButtonText: 'Aceptar'
+            });
+        }
+
+        function swalWarning(message, title) {
+            title = title || 'Atención';
+            return Swal.fire({
+                icon: 'warning',
+                title: title,
+                text: message,
+                confirmButtonText: 'Aceptar',
+                timer: 4000,
+                timerProgressBar: true,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false
+            });
+        }
+
         function swalConfirm(message, title) {
             title = title || 'Confirmar';
             return Swal.fire({
@@ -565,23 +940,84 @@
                 reverseButtons: true
             }).then(function (result) { return result.isConfirmed; });
         }
-        
-        function swalAlert(message, title) {
-            title = title || 'Alerta';
+
+        function swalLoading(message) {
             return Swal.fire({
-                icon: 'error',
-                title: title,
-                text: message,
-                confirmButtonText: 'Aceptar'
+                title: message || 'Procesando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
             });
         }
-        
-        function handleFetchResponse(response) {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
+
+        function swalClose() {
+            Swal.close();
         }
+
+        // Convert Django messages to SweetAlert toasts
+        window.addEventListener('DOMContentLoaded', function () {
+            const alerts = document.querySelectorAll('.messages-wrapper .alert');
+            alerts.forEach(alert => {
+                const tags = alert.classList;
+                let icon = 'info';
+                let title = 'Información';
+                let timer = 4000;
+
+                if (tags.contains('alert-success')) {
+                    icon = 'success';
+                    title = 'Éxito';
+                    timer = 3500;
+                } else if (tags.contains('alert-danger')) {
+                    icon = 'error';
+                    title = 'Error';
+                    timer = 0;
+                } else if (tags.contains('alert-warning')) {
+                    icon = 'warning';
+                    title = 'Atención';
+                    timer = 4000;
+                }
+
+                Swal.fire({
+                    icon: icon,
+                    title: title,
+                    text: alert.textContent.trim(),
+                    confirmButtonText: 'Aceptar',
+                    timer: timer,
+                    timerProgressBar: timer > 0,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: timer === 0
+                });
+                alert.closest('.messages-wrapper').remove();
+            });
+        });
+
+        // Update navigation links with current periodo
+        function actualizarEnlacesConPeriodo() {
+            const periodo = '{{ request.session.periodo_actual|default:"enero_2026" }}';
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentPeriodo = urlParams.get('periodo') || periodo;
+
+            const enlaceAgregar = document.querySelector('a[href="{% url "agregar_expediente" %}"]');
+            if (enlaceAgregar) {
+                const href = new URL(enlaceAgregar.href, window.location.origin);
+                if (!href.searchParams.has('periodo')) {
+                    href.searchParams.set('periodo', currentPeriodo);
+                    enlaceAgregar.href = href.toString();
+                }
+            }
+
+            const enlaceExportar = document.querySelector('a[href="{% url "exportar_expedientes_excel" %}"]');
+            if (enlaceExportar) {
+                const href = new URL(enlaceExportar.href, window.location.origin);
+                href.searchParams.set('periodo', currentPeriodo);
+                enlaceExportar.href = href.toString();
+            }
+        }
+
+        actualizarEnlacesConPeriodo();
     </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
 
 </html>

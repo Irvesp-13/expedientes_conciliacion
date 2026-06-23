@@ -154,10 +154,9 @@ def obtener_campos_exportables_expediente():
 
 
 def obtener_etiqueta_puesto(puesto):
-    try:
-        return Empleado.Puesto(int(puesto)).label
-    except (TypeError, ValueError):
-        return 'Puesto desconocido'
+    if puesto:
+        return str(puesto)
+    return 'Sin puesto'
 
 
 def obtener_etiqueta_rol(rol):
@@ -416,44 +415,6 @@ def agregar_expediente(request):
     return render(request, 'agregar_expediente.html', {'periodo_actual': periodo_seleccionado})
 
 
-def crear_empleado(request):
-    empleado_id = request.session.get('empleado_id')
-    if not empleado_id:
-        return redirect('iniciar_sesion')
-    empleado = Empleado.objects.get(id=empleado_id)
-    if not empleado.puede_gestionar_usuarios():
-        messages.error(request, 'No tienes permiso para acceder a esta página.')
-        return redirigir_a_error('No tienes permiso para acceder a esta página.')
-
-    if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        clave_empleado = request.POST.get('clave_empleado')
-        puesto = request.POST.get('puesto')
-        if nombre and clave_empleado and puesto:
-            if Empleado.objects.filter(clave_empleado=clave_empleado).exists():
-                messages.error(request, 'La clave de empleado ya existe.')
-            else:
-                nuevo_empleado = Empleado.objects.create(
-                    nombre=nombre,
-                    clave_empleado=clave_empleado,
-                    puesto=puesto
-                )
-                
-                # Registrar en bitácora
-                tipo_puesto = obtener_etiqueta_puesto(puesto)
-                registrar_accion(empleado, 'Crear empleado', f'Creó el empleado {nombre} (Clave: {clave_empleado}) como {tipo_puesto}', request)
-                
-                messages.success(request, 'Empleado creado exitosamente.')
-                return redirect('crear_empleado')
-        else:
-            messages.error(request, 'Todos los campos son obligatorios.')
-
-    empleados = Empleado.objects.all()
-    return render(request, 'crear_empleado.html', {
-        'empleados': empleados,
-        'puestos': Empleado.Puesto.choices,
-    })
-
 def ver_expediente(request, id_expediente):
     if not request.session.get('empleado_id'):
         return redirect('iniciar_sesion')
@@ -653,7 +614,7 @@ def crear_empleado(request):
     empleados = Empleado.objects.all()
     return render(request, 'crear_empleado.html', {
         'empleados': empleados,
-        'puestos': Empleado.Puesto.choices,
+        'roles': Empleado.Rol.choices,
     })
 
 
@@ -715,7 +676,7 @@ def editar_empleado(request, id):
         return redirect('crear_empleado')
     return render(request, 'editar_empleado.html', {
         'empleado': empleado_edit,
-        'puestos': Empleado.Puesto.choices,
+        'roles': Empleado.Rol.choices,
     })
 
 def eliminar_empleado(request, id):
@@ -843,7 +804,7 @@ def ver_cargas(request):
         messages.error(request, 'No tienes permiso para acceder a esta página.')
         return redirigir_a_error('No tienes permiso para acceder a esta página.')
     
-    cargas = CargaDescarga.objects.select_related('empleado', 'expediente').all().order_by('-fecha')
+    cargas = CargaDescarga.objects.select_related('empleado').all().order_by('-fecha')
     return render(request, 'ver_cargas.html', {'cargas': cargas})
 
 
@@ -943,14 +904,24 @@ def obtener_expedientes_ajax(request):
             'redirect_url': f"{reverse('error')}?mensaje={quote(mensaje)}",
         }, status=403)
     
-    # Obtener de todas las tablas de periodo
+    page = int(request.GET.get('page', 1))
+    page_size = int(request.GET.get('page_size', 50))
+    
+    search_query = request.GET.get('search', '').lower().strip()
+    
     periodos = obtener_periodos_disponibles()
     expedientes_list = []
     
     for p in periodos:
         tabla = f"expediente_{p}"
+        query = f"SELECT id, letra, exp, anio, actor, demandado, area_en_la_que_se_encuentra FROM `{tabla}`"
+        params = []
+        if search_query:
+            query += " WHERE LOWER(CONCAT_WS(' ', COALESCE(letra,''), COALESCE(exp,''), COALESCE(CAST(anio AS CHAR),''), COALESCE(actor,''), COALESCE(demandado,''), COALESCE(area_en_la_que_se_encuentra,''))) LIKE %s"
+            params = [f'%{search_query}%']
+        
         with connection.cursor() as cursor:
-            cursor.execute(f"SELECT id, letra, exp, anio, actor, demandado, area_en_la_que_se_encuentra FROM `{tabla}`")
+            cursor.execute(query, params)
             for row in cursor.fetchall():
                 expedientes_list.append({
                     'id': row[0],
@@ -960,7 +931,21 @@ def obtener_expedientes_ajax(request):
                     'demandado_nombre': row[5],
                 })
     
-    return JsonResponse({'success': True, 'expedientes': expedientes_list})
+    total = len(expedientes_list)
+    start = (page - 1) * page_size
+    end = start + page_size
+    page_data = expedientes_list[start:end]
+    
+    return JsonResponse({
+        'success': True,
+        'expedientes': page_data,
+        'pagination': {
+            'page': page,
+            'page_size': page_size,
+            'total': total,
+            'total_pages': max(1, (total + page_size - 1) // page_size)
+        }
+    })
 
 # Remove @login_required decorator and keep the function as is
 def ver_archivados(request):

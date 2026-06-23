@@ -1,43 +1,55 @@
 {% extends 'base.html' %}
 
-{% block title %}Crear Periodo{% endblock %}
+{% block title %}Crear Periodo - CADEX{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <a href="{% url 'bienvenida' %}" class="btn btn-outline-primary">
-            <i class="fas fa-arrow-left"></i> Regresar
-        </a>
-        <h2 class="mb-0">Crear Nuevo Periodo</h2>
-    </div>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-    
-    <div class="card">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="mes" class="form-label">Mes:</label>
-                    <select class="form-control" id="mes" name="mes" required>
-                        <option value="">Seleccione un mes</option>
-                        {% for mes in meses %}
-                        <option value="{{ mes }}">{{ mes|title }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label for="anio" class="form-label">Año:</label>
-                    <input type="number" class="form-control" id="anio" name="anio" required min="2020" max="2030" value="2026">
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-calendar-plus"></i> Crear Periodo
-                </button>
-            </form>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-header text-white d-flex align-items-center gap-2">
+                <i class="fas fa-calendar-plus fa-lg"></i>
+                <h3 class="card-title mb-0">Crear Nuevo Periodo</h3>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'bienvenida' %}" class="btn btn-outline-primary btn-sm mb-3">
+                    <i class="fas fa-arrow-left"></i> Regresar
+                </a>
+                <form method="post" id="formPeriodo">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="mes" class="form-label">Mes</label>
+                        <select class="form-control" id="mes" name="mes" required>
+                            <option value="">Seleccione un mes</option>
+                            {% for mes in meses %}
+                            <option value="{{ mes }}">{{ mes|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label for="anio" class="form-label">Año</label>
+                        <input type="number" class="form-control" id="anio" name="anio" required min="2020" max="2030" value="2026">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-agregar flex-fill" id="btnPeriodo">
+                            <i class="fas fa-calendar-plus"></i> Crear Periodo
+                        </button>
+                        <a href="{% url 'bienvenida' %}" class="btn btn-secondary flex-fill">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('formPeriodo').addEventListener('submit', function(e) {
+        const btn = document.getElementById('btnPeriodo');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-border spinner-border-sm mr-2" role="status"></div> Creando...';
+    });
+</script>
 {% endblock %}

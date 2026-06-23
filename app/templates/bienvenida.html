@@ -1,97 +1,110 @@
 {% extends 'base.html' %}
 
-{% block title %}Bienvenida{% endblock %}
+{% block title %}Tabla de Expedientes - CADEX{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card shadow">
             <div class="card-header text-white d-flex justify-content-between align-items-center">
-                <h3 class="card-title mb-0">Tabla de Expedientes</h3>
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-folder-open fa-lg"></i>
+                    <h3 class="card-title mb-0">Expedientes</h3>
+                </div>
                 {% if empleado.es_administrador %}
-                <a href="{% url 'crear_periodo' %}" class="btn btn-sm btn-success" title="Crear nuevo periodo">
+                <a href="{% url 'crear_periodo' %}" class="btn btn-sm btn-light" title="Crear nuevo periodo">
                     <i class="fas fa-calendar-plus"></i> Nuevo Periodo
                 </a>
                 {% endif %}
             </div>
-            <div class="card-header text-white">
-                {% if periodos_disponibles %}
-                <div class="mt-2">
-                    <ul class="nav nav-tabs card-header-tabs">
-                        {% for periodo in periodos_disponibles %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if periodo.clave == periodo_actual %}active{% endif %}" 
-                               href="{% url 'bienvenida' %}?periodo={{ periodo.clave }}">
-                                {{ periodo.nombre }}
-                            </a>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                </div>
-                {% endif %}
-            </div>
+
+            <!-- Period tabs -->
+{% if periodos_disponibles %}
+<div class="card-header text-white" style="background: rgba(0,0,0,0.15);">
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-white-50 small mr-2">Periodo:</span>
+        <ul class="nav nav-tabs card-header-tabs mb-0">
+            {% for periodo in periodos_disponibles %}
+            <li class="nav-item">
+                <a class="nav-link {% if periodo.clave == periodo_actual %}active{% endif %}" 
+                   href="{% url 'bienvenida' %}?periodo={{ periodo.clave }}">
+                    {% if periodo.clave == periodo_actual %}<i class="fas fa-calendar-day mr-1"></i>{% endif %}
+                    {{ periodo.nombre }}
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
             <div class="card-body">
-                <div class="row mb-4">
-                    <!-- Search bar -->
-                    <div class="col-md-12">
+                <div class="row mb-3">
+                    <div class="col-md-8">
                         <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
                             <input type="text" id="searchInput" class="form-control"
                                 placeholder="Buscar por Actor, Demandado, Expediente o Junta...">
                             <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()" title="Limpiar búsqueda">
+                                <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()"
+                                    title="Limpiar">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
+                    <div class="col-md-4 text-md-right mt-2 mt-md-0">
+                        <span class="text-muted small">
+                            Página {{ expedientes.number }} de {{ expedientes.paginator.num_pages }}
+                            ({{ expedientes.paginator.count }} expedientes)
+                        </span>
+                    </div>
                 </div>
 
-                <!-- Tabla de expedientes -->
+                {% if expedientes %}
                 <div class="table-responsive" style="max-height: 530px; overflow-y: auto;">
                     <table class="table table-bordered table-striped table-hover table-sm" id="expedientesTable">
-        <thead style="position: sticky; top: 0; background-color: #315527; z-index: 1;">
-            <tr>
-                <th style="width: 6%; text-align: center;">Letra</th>
-                <th style="width: 9%; text-align: center;">Expediente</th>
-                <th style="width: 6%; text-align: center;">Año</th>
-                <th style="width: 19%;">Área</th>
-                <th style="width: 24%;">Actor</th>
-                <th style="width: 24%;">Demandado</th>
-                <th style="width: 12%; text-align: center;">ACCIONES</th>
-            </tr>
-        </thead>
+                        <thead style="position: sticky; top: 0; background-color: #1a472a; z-index: 1;">
+                            <tr>
+                                <th style="width: 6%; text-align: center;">Letra</th>
+                                <th style="width: 9%; text-align: center;">Expediente</th>
+                                <th style="width: 6%; text-align: center;">Año</th>
+                                <th style="width: 22%;">Área</th>
+                                <th style="width: 22%;">Actor</th>
+                                <th style="width: 22%;">Demandado</th>
+                                <th style="width: 13%; text-align: center;">ACCIONES</th>
+                            </tr>
+                        </thead>
                         <tbody>
                             {% for expediente in expedientes %}
-                            <tr class="expediente-row" style="cursor: pointer;" data-url="{% url 'ver_expediente' expediente.id %}">
+                            <tr class="expediente-row" style="cursor: pointer;"
+                                data-url="{% url 'ver_expediente' expediente.id %}">
                                 <td style="text-align: center; vertical-align: middle;">{{ expediente.letra }}</td>
                                 <td style="text-align: center; vertical-align: middle;">{{ expediente.exp }}</td>
                                 <td style="text-align: center; vertical-align: middle;">{{ expediente.anio }}</td>
-                                <td style="vertical-align: middle; font-size: 0.95rem;">{{ expediente.area_en_la_que_se_encuentra }}</td>
-                                <td style="vertical-align: middle; font-size: 0.95rem;">{{ expediente.actor }}</td>
-                                <td style="vertical-align: middle; font-size: 0.95rem;">{{ expediente.demandado }}</td>
-                                <td style="white-space: nowrap; vertical-align: middle;" onclick="event.stopPropagation();">
-                                    <a href="{% url 'ver_expediente' expediente.id %}"
-                                        class="btn btn-info btn-xs" title="Ver expediente"
-                                        style="padding: 4px 8px; font-size: 0.8rem;">
+                                <td style="vertical-align: middle;">{{ expediente.area_en_la_que_se_encuentra }}</td>
+                                <td style="vertical-align: middle;">{{ expediente.actor }}</td>
+                                <td style="vertical-align: middle;">{{ expediente.demandado }}</td>
+                                <td style="white-space: nowrap; vertical-align: middle;"
+                                    onclick="event.stopPropagation();">
+                                    <a href="{% url 'ver_expediente' expediente.id %}" class="btn btn-info btn-xs"
+                                        title="Ver expediente">
                                         <i class="fas fa-eye"></i>
                                     </a>
                                     {% if empleado.es_administrador %}
-                                    <a href="{% url 'editar_expediente' expediente.id %}"
-                                        class="btn btn-agregar btn-xs" title="Editar expediente"
-                                        style="padding: 4px 8px; font-size: 0.8rem;">
+                                    <a href="{% url 'editar_expediente' expediente.id %}" class="btn btn-agregar btn-xs"
+                                        title="Editar expediente">
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     {% endif %}
                                     {% if empleado.puede_archivar_expedientes %}
                                     <button class="btn btn-secondary btn-xs" title="Archivar expediente"
-                                        onclick="abrirModalArchivoMultiple('{{ expediente.id }}'); return false;"
-                                        style="padding: 4px 8px; font-size: 0.8rem;">
+                                        onclick="abrirModalArchivoMultiple('{{ expediente.id }}'); return false;">
                                         <i class="fas fa-archive"></i>
                                     </button>
                                     {% endif %}
                                     <button class="btn btn-agregar btn-xs" title="Cargar expediente"
-                                        onclick="abrirModalCarga('{{ expediente.id }}', '{{ expediente.letra }} {{ expediente.exp }}/{{ expediente.anio }}')"
-                                        style="padding: 4px 8px; font-size: 0.8rem;">
+                                        onclick="abrirModalCarga('{{ expediente.id }}', '{{ expediente.letra }} {{ expediente.exp }}/{{ expediente.anio }}')">
                                         <i class="fas fa-file-upload"></i>
                                     </button>
                                 </td>
@@ -100,14 +113,22 @@
                         </tbody>
                     </table>
                 </div>
-                
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h5 class="text-muted">No hay expedientes en este periodo</h5>
+                </div>
+                {% endif %}
+
                 <!-- Paginación -->
                 {% if expedientes.has_other_pages %}
                 <nav aria-label="Navegación de páginas" class="mt-3">
                     <ul class="pagination justify-content-center">
                         {% if expedientes.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ expedientes.previous_page_number }}&periodo={{ periodo_actual }}" aria-label="Anterior">
+                            <a class="page-link"
+                                href="?page={{ expedientes.previous_page_number }}&periodo={{ periodo_actual }}"
+                                aria-label="Anterior">
                                 <span aria-hidden="true">&laquo;</span>
                             </a>
                         </li>
@@ -118,28 +139,28 @@
                         {% endif %}
 
                         {% for num in expedientes.paginator.page_range %}
-                            {% if expedientes.number == num %}
-                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
-                            {% elif num > expedientes.number|add:'-3' and num < expedientes.number|add:'3' %}
-                            <li class="page-item"><a class="page-link" href="?page={{ num }}&periodo={{ periodo_actual }}">{{ num }}</a></li>
+                        {% if expedientes.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num > expedientes.number|add:'-3' and num < expedientes.number|add:'3' %} <li
+                            class="page-item"><a class="page-link"
+                                href="?page={{ num }}&periodo={{ periodo_actual }}">{{ num }}</a></li>
                             {% endif %}
-                        {% endfor %}
+                            {% endfor %}
 
-                        {% if expedientes.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ expedientes.next_page_number }}&periodo={{ periodo_actual }}" aria-label="Siguiente">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="page-item disabled">
-                            <span class="page-link">&raquo;</span>
-                        </li>
-                        {% endif %}
+                            {% if expedientes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link"
+                                    href="?page={{ expedientes.next_page_number }}&periodo={{ periodo_actual }}"
+                                    aria-label="Siguiente">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">&raquo;</span>
+                            </li>
+                            {% endif %}
                     </ul>
-                    <div class="text-center text-muted mt-2">
-                        Página {{ expedientes.number }} de {{ expedientes.paginator.num_pages }} ({{ expedientes.paginator.count }} expedientes)
-                    </div>
                 </nav>
                 {% endif %}
             </div>
@@ -152,36 +173,39 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Cargar Expediente</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-file-upload mr-2"></i> Cargar Expediente</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formCarga">
                     {% csrf_token %}
                     <input type="hidden" id="expediente_id" name="expediente_id">
                     <div class="mb-3">
-                        <label>Empleado:</label>
+                        <label class="form-label">Empleado:</label>
                         <input type="text" class="form-control" value="{{ empleado.nombre }}" readonly>
                     </div>
                     <div class="mb-3">
-                        <label>Expediente:</label>
+                        <label class="form-label">Expediente:</label>
                         <input type="text" id="numero_expediente" class="form-control" readonly>
                     </div>
                     <div class="mb-3">
-                        <label>Fecha:</label>
+                        <label class="form-label">Fecha:</label>
                         <input type="text" class="form-control" value="{% now 'Y-m-d H:i' %}" readonly>
                     </div>
                     <div class="mb-3">
-                        <label for="tipo_recepcion">Tipo de receptor:</label>
+                        <label for="tipo_recepcion" class="form-label">Tipo de receptor:</label>
                         <select class="form-control" id="tipo_recepcion" name="tipo_recepcion">
                             <option value="usuario">Usuario del sistema</option>
                             <option value="otro">Otro</option>
                         </select>
                     </div>
                     <div class="mb-3" id="contenedorUsuariosSistema">
-                        <label for="searchUsuarioCarga">Buscar usuario:</label>
-                        <input type="text" id="searchUsuarioCarga" class="form-control" placeholder="Escribe para filtrar usuarios...">
-                        <label for="nombre_carga" class="mt-2">Usuario que recibe:</label>
+                        <label for="searchUsuarioCarga" class="form-label">Buscar usuario:</label>
+                        <input type="text" id="searchUsuarioCarga" class="form-control"
+                            placeholder="Escribe para filtrar usuarios...">
+                        <label for="nombre_carga" class="form-label mt-2">Usuario que recibe:</label>
                         <select class="form-control" id="nombre_carga" name="nombre_carga" required size="6">
                             <option value="">Seleccione un usuario</option>
                             {% for usuario in empleados_carga %}
@@ -190,10 +214,12 @@
                         </select>
                     </div>
                     <div class="mb-3 d-none" id="contenedorOtroCarga">
-                        <label for="nombre_carga_otro">Nombre de quien recibe:</label>
-                        <input type="text" class="form-control" id="nombre_carga_otro" name="nombre_carga_otro" placeholder="Nombre completo del receptor">
-                        <label for="junta_carga" class="mt-2">Junta a la que pertenece:</label>
-                        <input type="text" class="form-control" id="junta_carga" name="junta_carga" placeholder="Nombre de la junta">
+                        <label for="nombre_carga_otro" class="form-label">Nombre de quien recibe:</label>
+                        <input type="text" class="form-control" id="nombre_carga_otro" name="nombre_carga_otro"
+                            placeholder="Nombre completo del receptor">
+                        <label for="junta_carga" class="form-label mt-2">Junta a la que pertenece:</label>
+                        <input type="text" class="form-control" id="junta_carga" name="junta_carga"
+                            placeholder="Nombre de la junta">
                     </div>
                 </form>
             </div>
@@ -210,40 +236,52 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Archivar Expedientes</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title"><i class="fas fa-archive mr-2"></i> Archivar Expedientes</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
             </div>
             <div class="modal-body">
                 <form id="formArchivo">
                     {% csrf_token %}
 
-                    <!-- Buscador de expedientes -->
                     <div class="mb-3">
                         <label class="form-label">Buscar expedientes:</label>
-                        <input type="text" id="searchExpedientesArchivo" class="form-control"
-                            placeholder="Buscar por Expediente, Junta, Actor o Demandado...">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" id="searchExpedientesArchivo" class="form-control"
+                                placeholder="Buscar por Expediente, Junta, Actor o Demandado...">
+                        </div>
                     </div>
 
-                    <!-- Botones de selección -->
-                    <div class="mb-3">
+                    <div class="mb-3 d-flex align-items-center gap-2 flex-wrap">
                         <button type="button" class="btn btn-sm btn-outline-primary" onclick="seleccionarTodos()">
-                            Seleccionar Todos
+                            <i class="fas fa-check-double"></i> Seleccionar Todos
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-secondary" onclick="deseleccionarTodos()">
-                            Deseleccionar Todos
+                            <i class="fas fa-times-circle"></i> Deseleccionar Todos
                         </button>
-                        <span id="contadorSeleccionados" class="ms-3 text-muted">0 expedientes seleccionados</span>
+                        <span id="contadorSeleccionados" class="text-muted small ms-auto">0 expedientes
+                            seleccionados</span>
                     </div>
 
-                    <!-- Lista de expedientes -->
                     <div class="mb-3">
                         <label class="form-label">Expedientes disponibles:</label>
                         <div id="listaExpedientes" class="border rounded p-3"
-                            style="max-height: 300px; overflow-y: auto;">
+                            style="max-height: 300px; overflow-y: auto; background: #f8f9fa;">
                             <div class="text-center text-muted">
                                 <div class="spinner-border spinner-border-sm" role="status"></div>
                                 Cargando expedientes...
                             </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPaginaAnterior" onclick="cambiarPagina(-1)">
+                                <i class="fas fa-chevron-left"></i> Anterior
+                            </button>
+                            <span id="infoPaginacion" class="text-muted small"></span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="btnPaginaSiguiente" onclick="cambiarPagina(1)">
+                                Siguiente <i class="fas fa-chevron-right"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -261,25 +299,26 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="cerrarModalArchivo()">Cancelar</button>
-                <button type="button" class="btn btn-danger" onclick="archivarExpedientesSeleccionados()"
-                    id="btnArchivar" disabled>
-                    Archivar Expedientes
+                <button type="button" class="btn btn-danger" id="btnArchivar" disabled>
+                    <i class="fas fa-archive"></i> Archivar Expedientes
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-
 <script>
     let myModal;
     let modalArchivo;
     let expedientesData = [];
     let expedientesSeleccionados = [];
+    let paginaActual = 1;
+    let totalPaginas = 1;
+    const TAMANO_PAGINA = 50;
     const usuariosCarga = [
         {% for usuario in empleados_carga %}
-        { id: '{{ usuario.id }}', nombre: '{{ usuario.nombre|escapejs }}' }{% if not forloop.last %},{% endif %}
-        {% endfor %}
+    { id: '{{ usuario.id }}', nombre: '{{ usuario.nombre|escapejs }}' } {% if not forloop.last %}, {% endif %}
+    {% endfor %}
     ];
 
     function renderUsuariosCarga(filtro = '') {
@@ -322,23 +361,15 @@
         const inputNombreOtro = document.getElementById('nombre_carga_otro');
         const inputJunta = document.getElementById('junta_carga');
 
-        if (!tipoRecepcion || !contenedorUsuariosSistema || !contenedorOtroCarga) {
-            return;
-        }
+        if (!tipoRecepcion || !contenedorUsuariosSistema || !contenedorOtroCarga) return;
 
         const esOtro = tipoRecepcion.value === 'otro';
         contenedorUsuariosSistema.classList.toggle('d-none', esOtro);
         contenedorOtroCarga.classList.toggle('d-none', !esOtro);
 
-        if (selectUsuario) {
-            selectUsuario.required = !esOtro;
-        }
-        if (inputNombreOtro) {
-            inputNombreOtro.required = esOtro;
-        }
-        if (inputJunta) {
-            inputJunta.required = esOtro;
-        }
+        if (selectUsuario) selectUsuario.required = !esOtro;
+        if (inputNombreOtro) inputNombreOtro.required = esOtro;
+        if (inputJunta) inputJunta.required = esOtro;
     }
 
     function abrirModalCarga(id, numero) {
@@ -373,22 +404,14 @@
         if (tipoRecepcion === 'usuario') {
             const nombreCarga = formData.get('nombre_carga');
             if (!nombreCarga || !String(nombreCarga).trim()) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Falta el usuario',
-                    text: 'Por favor, selecciona el usuario que recibe.'
-                });
+                swalWarning('Por favor, selecciona el usuario que recibe.', 'Falta el usuario');
                 return;
             }
         } else {
             const nombreCargaOtro = formData.get('nombre_carga_otro');
             const juntaCarga = formData.get('junta_carga');
             if (!nombreCargaOtro || !String(nombreCargaOtro).trim() || !juntaCarga || !String(juntaCarga).trim()) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Faltan datos',
-                    text: 'Completa el nombre y la junta del receptor.'
-                });
+                swalWarning('Completa el nombre y la junta del receptor.', 'Faltan datos');
                 return;
             }
         }
@@ -399,11 +422,7 @@
             btnGuardarCarga.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Cargando...';
         }
 
-        Swal.fire({
-            title: 'Registrando carga...',
-            allowOutsideClick: false,
-            didOpen: () => Swal.showLoading()
-        });
+        swalLoading('Registrando carga...');
 
         fetch('{% url "cargar_expediente" %}', {
             method: 'POST',
@@ -412,36 +431,26 @@
             },
             body: formData
         })
-            .then(response => response.json())
+            .then(handleFetchResponse)
             .then(data => {
+                swalClose();
                 if (data && data.redirect_url) {
                     window.location.href = data.redirect_url;
                     return;
                 }
                 if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Carga registrada',
-                        text: data.message || 'Carga registrada correctamente'
-                    }).then(() => {
+                    swalSuccess('Carga registrada correctamente.', 'Éxito').then(() => {
                         cerrarModalCarga();
                         location.reload();
                     });
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al registrar la carga',
-                        text: data.error || 'Error desconocido'
-                    });
+                    swalError(data.error || 'Error desconocido', 'Error al registrar la carga');
                 }
             })
             .catch(error => {
+                swalClose();
                 console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error al procesar la solicitud',
-                    text: 'Por favor, inténtelo de nuevo.'
-                });
+                swalError('Por favor, inténtelo de nuevo.', 'Error al procesar la solicitud');
             })
             .finally(() => {
                 if (btnGuardarCarga) {
@@ -452,10 +461,7 @@
     }
 
     function cerrarModalCarga() {
-        if (myModal) {
-            myModal.hide();
-        }
-        // Limpiar el formulario
+        if (myModal) myModal.hide();
         document.getElementById('formCarga').reset();
         document.getElementById('expediente_id').value = '';
         document.getElementById('numero_expediente').value = '';
@@ -463,38 +469,48 @@
         toggleTipoRecepcion();
     }
 
-    // Funciones para el modal de archivo múltiple
     function abrirModalArchivoMultiple(expedienteId = null) {
         modalArchivo = new bootstrap.Modal(document.getElementById('modalArchivo'));
         modalArchivo.show();
-        cargarExpedientes();
-        // Limpiar datos previos
+        paginaActual = 1;
+        totalPaginas = 1;
         expedientesSeleccionados = [];
         if (expedienteId !== null && expedienteId !== undefined && expedienteId !== '') {
             expedientesSeleccionados = [String(expedienteId)];
         }
         actualizarContador();
         document.querySelector('textarea[name="motivo"]').value = '';
-        document.getElementById('searchExpedientesArchivo').value = '';
+        const searchInput = document.getElementById('searchExpedientesArchivo');
+        if (searchInput) searchInput.value = '';
+        cargarExpedientes(1, '');
     }
 
     function cerrarModalArchivo() {
-        if (modalArchivo) {
-            modalArchivo.hide();
-        }
-        // Limpiar datos
+        if (modalArchivo) modalArchivo.hide();
         expedientesSeleccionados = [];
         expedientesData = [];
         document.getElementById('formArchivo').reset();
         document.getElementById('listaExpedientes').innerHTML = '';
         document.getElementById('contadorSeleccionados').textContent = '0 expedientes seleccionados';
         document.getElementById('btnArchivar').disabled = true;
+        paginaActual = 1;
+        totalPaginas = 1;
     }
 
-    function cargarExpedientes() {
+    function cargarExpedientes(page = 1, searchQuery = '') {
         const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const searchInput = document.getElementById('searchExpedientesArchivo');
+        const query = searchQuery !== '' ? searchQuery : (searchInput ? searchInput.value : '');
 
-        fetch('{% url "obtener_expedientes_ajax" %}', {
+        const params = new URLSearchParams({
+            page: page,
+            page_size: TAMANO_PAGINA,
+            search: query
+        });
+
+        swalLoading('Cargando expedientes...');
+
+        fetch(`{% url "obtener_expedientes_ajax" %}?${params.toString()}`, {
             method: 'GET',
             headers: {
                 'X-CSRFToken': csrftoken,
@@ -502,32 +518,47 @@
             },
             credentials: 'same-origin'
         })
-            .then(response => response.json())
+            .then(handleFetchResponse)
             .then(data => {
+                swalClose();
                 if (data && data.redirect_url) {
                     window.location.href = data.redirect_url;
                     return;
                 }
                 if (data.success) {
                     expedientesData = data.expedientes;
+                    paginaActual = data.pagination.page;
+                    totalPaginas = data.pagination.total_pages;
                     mostrarExpedientes(expedientesData);
+                    actualizarInfoPaginacion(data.pagination);
                 } else {
                     document.getElementById('listaExpedientes').innerHTML =
                         '<div class="alert alert-danger">Error al cargar expedientes: ' + data.error + '</div>';
                 }
             })
             .catch(error => {
+                swalClose();
                 console.error('Error:', error);
                 document.getElementById('listaExpedientes').innerHTML =
                     '<div class="alert alert-danger">Error al cargar expedientes</div>';
             });
     }
 
+    function sincronizarSeleccion() {
+        expedientesSeleccionados = [];
+        const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]:checked');
+        checkboxes.forEach(cb => expedientesSeleccionados.push(cb.value));
+    }
+
     function mostrarExpedientes(expedientes) {
         const lista = document.getElementById('listaExpedientes');
 
+        sincronizarSeleccion();
+
         if (expedientes.length === 0) {
-            lista.innerHTML = '<div class="text-muted">No se encontraron expedientes</div>';
+            lista.innerHTML = '<div class="text-muted text-center py-3">No se encontraron expedientes</div>';
+            actualizarInfoPaginacion({ page: 0, total_pages: 0, total: 0 });
+            actualizarBotonesPaginacion();
             return;
         }
 
@@ -538,11 +569,11 @@
                     <input class="form-check-input" type="checkbox" value="${exp.id}" 
                            id="exp_${exp.id}" onchange="actualizarSeleccion()">
                     <label class="form-check-label w-100" for="exp_${exp.id}">
-                        <div class="row">
+                        <div class="row align-items-center">
                             <div class="col-md-3"><strong>${exp.expediente}</strong></div>
-                            <div class="col-md-2">${exp.junta}</div>
-                            <div class="col-md-3">${exp.actor_nombre}</div>
-                            <div class="col-md-4">${exp.demandado_nombre}</div>
+                            <div class="col-md-2 text-muted small">${exp.junta}</div>
+                            <div class="col-md-3 small">${exp.actor_nombre}</div>
+                            <div class="col-md-4 small">${exp.demandado_nombre}</div>
                         </div>
                     </label>
                 </div>
@@ -553,31 +584,48 @@
 
         expedientesSeleccionados.forEach(id => {
             const checkbox = document.getElementById(`exp_${id}`);
-            if (checkbox) {
-                checkbox.checked = true;
-            }
+            if (checkbox) checkbox.checked = true;
         });
 
         actualizarContador();
+        actualizarBotonesPaginacion();
+    }
+
+    function actualizarInfoPaginacion(paginacion) {
+        const info = document.getElementById('infoPaginacion');
+        if (!info) return;
+        if (paginacion.total === 0) {
+            info.textContent = 'Sin resultados';
+        } else {
+            const inicio = (paginacion.page - 1) * paginacion.page_size + 1;
+            const fin = Math.min(paginacion.page * paginacion.page_size, paginacion.total);
+            info.textContent = `Página ${paginacion.page} de ${paginacion.total_pages} (${paginacion.total} expedientes) - Mostrando ${inicio}-${fin}`;
+        }
+    }
+
+    function actualizarBotonesPaginacion() {
+        const btnAnterior = document.getElementById('btnPaginaAnterior');
+        const btnSiguiente = document.getElementById('btnPaginaSiguiente');
+        if (btnAnterior) btnAnterior.disabled = paginaActual <= 1;
+        if (btnSiguiente) btnSiguiente.disabled = paginaActual >= totalPaginas;
+    }
+
+    function cambiarPagina(delta) {
+        sincronizarSeleccion();
+        const nuevaPagina = paginaActual + delta;
+        if (nuevaPagina < 1 || nuevaPagina > totalPaginas) return;
+        const searchInput = document.getElementById('searchExpedientesArchivo');
+        const query = searchInput ? searchInput.value : '';
+        cargarExpedientes(nuevaPagina, query);
+        document.getElementById('listaExpedientes').scrollTop = 0;
     }
 
     function filtrarExpedientes() {
-        const filtro = document.getElementById('searchExpedientesArchivo').value.toLowerCase();
-        const expedientesFiltrados = expedientesData.filter(exp =>
-            exp.expediente.toLowerCase().includes(filtro) ||
-            exp.junta.toLowerCase().includes(filtro) ||
-            exp.actor_nombre.toLowerCase().includes(filtro) ||
-            exp.demandado_nombre.toLowerCase().includes(filtro)
-        );
-        mostrarExpedientes(expedientesFiltrados);
-
-        // Mantener selecciones después del filtro
-        expedientesSeleccionados.forEach(id => {
-            const checkbox = document.getElementById(`exp_${id}`);
-            if (checkbox) {
-                checkbox.checked = true;
-            }
-        });
+        sincronizarSeleccion();
+        const searchInput = document.getElementById('searchExpedientesArchivo');
+        const query = searchInput ? searchInput.value : '';
+        paginaActual = 1;
+        cargarExpedientes(1, query);
     }
 
     function seleccionarTodos() {
@@ -593,19 +641,13 @@
 
     function deseleccionarTodos() {
         const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
-            checkbox.checked = false;
-        });
+        checkboxes.forEach(checkbox => checkbox.checked = false);
         expedientesSeleccionados = [];
         actualizarContador();
     }
 
     function actualizarSeleccion() {
-        expedientesSeleccionados = [];
-        const checkboxes = document.querySelectorAll('#listaExpedientes input[type="checkbox"]:checked');
-        checkboxes.forEach(checkbox => {
-            expedientesSeleccionados.push(checkbox.value);
-        });
+        sincronizarSeleccion();
         actualizarContador();
     }
 
@@ -619,108 +661,72 @@
 
     function archivarExpedientesSeleccionados() {
         if (expedientesSeleccionados.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Selecciona expedientes',
-                text: 'Por favor, selecciona al menos un expediente para archivar'
-            });
+            swalWarning('Por favor, selecciona al menos un expediente para archivar', 'Selecciona expedientes');
             return;
         }
 
         const motivo = document.querySelector('textarea[name="motivo"]').value;
         if (!motivo.trim()) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Falta el motivo',
-                text: 'Por favor, ingresa el motivo del archivo'
-            });
+            swalWarning('Por favor, ingresa el motivo del archivo', 'Falta el motivo');
             return;
         }
 
-        Swal.fire({
-            icon: 'question',
-            title: 'Archivar expedientes',
-            text: `¿Estás seguro de que deseas archivar ${expedientesSeleccionados.length} expediente(s)?`,
-            showCancelButton: true,
-            confirmButtonText: 'Sí, archivar',
-            cancelButtonText: 'Cancelar'
-        }).then(result => {
-            if (!result.isConfirmed) {
-                return;
-            }
+        swalConfirm(`¿Estás seguro de que deseas archivar ${expedientesSeleccionados.length} expediente(s)?`, 'Archivar expedientes')
+            .then(ok => {
+                if (!ok) return;
 
-            const formData = new FormData();
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                const formData = new FormData();
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-            expedientesSeleccionados.forEach(id => {
-                formData.append('expedientes_ids[]', id);
-            });
-            formData.append('motivo', motivo);
-
-            // Deshabilitar botón mientras se procesa
-            const btnArchivar = document.getElementById('btnArchivar');
-            btnArchivar.disabled = true;
-            btnArchivar.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Archivando...';
-
-            Swal.fire({
-                title: 'Archivando...',
-                allowOutsideClick: false,
-                didOpen: () => Swal.showLoading()
-            });
-
-            fetch('{% url "archivar_expediente" %}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrftoken,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin',
-                body: formData
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data && data.redirect_url) {
-                        window.location.href = data.redirect_url;
-                        return;
-                    }
-                    if (data.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Archivado correctamente',
-                            text: data.message || 'Expedientes archivados correctamente'
-                        }).then(() => {
-                            cerrarModalArchivo();
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error al archivar',
-                            text: data.error || 'Error desconocido'
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al procesar la solicitud',
-                        text: 'Por favor, inténtelo de nuevo.'
-                    });
-                })
-                .finally(() => {
-                    btnArchivar.disabled = false;
-                    btnArchivar.innerHTML = 'Archivar Expedientes';
+                expedientesSeleccionados.forEach(id => {
+                    formData.append('expedientes_ids[]', id);
                 });
-        });
+                formData.append('motivo', motivo);
+
+                const btnArchivar = document.getElementById('btnArchivar');
+                btnArchivar.disabled = true;
+                btnArchivar.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div> Archivando...';
+
+                swalLoading('Archivando expedientes...');
+
+                fetch('{% url "archivar_expediente" %}', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: formData
+                })
+                    .then(handleFetchResponse)
+                    .then(data => {
+                        swalClose();
+                        if (data && data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                            return;
+                        }
+                        if (data.success) {
+                            swalSuccess(data.message || 'Expedientes archivados correctamente', 'Archivado correctamente').then(() => {
+                                cerrarModalArchivo();
+                                location.reload();
+                            });
+                        } else {
+                            swalError(data.error || 'Error desconocido', 'Error al archivar');
+                        }
+                    })
+                    .catch(error => {
+                        swalClose();
+                        console.error('Error:', error);
+                        swalError('Por favor, inténtelo de nuevo.', 'Error al procesar la solicitud');
+                    })
+                    .finally(() => {
+                        btnArchivar.disabled = false;
+                        btnArchivar.innerHTML = '<i class="fas fa-archive"></i> Archivar Expedientes';
+                    });
+            });
     }
 
-    // Event listener para el buscador
+    // Event listeners
     document.addEventListener('DOMContentLoaded', function () {
         myModal = new bootstrap.Modal(document.getElementById('modalCarga'));
 
@@ -739,47 +745,42 @@
         renderUsuariosCarga('');
         toggleTipoRecepcion();
 
-        const searchInput = document.getElementById('searchExpedientesArchivo');
-        if (searchInput) {
-            searchInput.addEventListener('keyup', filtrarExpedientes);
+        const searchInputArchivo = document.getElementById('searchExpedientesArchivo');
+        if (searchInputArchivo) {
+            searchInputArchivo.addEventListener('keyup', filtrarExpedientes);
         }
 
-        // Event listeners para cerrar modales
         const modalCargaElement = document.getElementById('modalCarga');
         const modalArchivoElement = document.getElementById('modalArchivo');
 
         if (modalCargaElement) {
-            modalCargaElement.addEventListener('hidden.bs.modal', function () {
-                cerrarModalCarga();
-            });
+            modalCargaElement.addEventListener('hidden.bs.modal', cerrarModalCarga);
         }
 
         if (modalArchivoElement) {
-            modalArchivoElement.addEventListener('hidden.bs.modal', function () {
-                cerrarModalArchivo();
-            });
+            modalArchivoElement.addEventListener('hidden.bs.modal', cerrarModalArchivo);
         }
-    });
 
-    // Función de búsqueda para la tabla principal
-    document.addEventListener('DOMContentLoaded', function() {
-        // Manejar clicks en filas
+        const btnArchivar = document.getElementById('btnArchivar');
+        if (btnArchivar) {
+            btnArchivar.addEventListener('click', archivarExpedientesSeleccionados);
+        }
+
+        // Row click
         const expedienteRows = document.querySelectorAll('.expediente-row');
         expedienteRows.forEach(row => {
-            row.addEventListener('click', function(e) {
+            row.addEventListener('click', function (e) {
                 if (!e.target.closest('button, a')) {
                     const url = this.getAttribute('data-url');
-                    if (url) {
-                        window.location.href = url;
-                    }
+                    if (url) window.location.href = url;
                 }
             });
         });
 
-        // Búsqueda
+        // Search
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
-            searchInput.addEventListener('keyup', function() {
+            searchInput.addEventListener('keyup', function () {
                 let searchText = this.value.toLowerCase();
                 let rows = document.getElementsByClassName('expediente-row');
 
@@ -805,13 +806,13 @@
         }
     });
 
-    // Función para limpiar el campo de búsqueda
     function limpiarBusqueda() {
         const searchInput = document.getElementById('searchInput');
-        searchInput.value = '';
-        searchInput.dispatchEvent(new Event('keyup'));
-        searchInput.focus();
+        if (searchInput) {
+            searchInput.value = '';
+            searchInput.dispatchEvent(new Event('keyup'));
+            searchInput.focus();
+        }
     }
-
 </script>
 {% endblock %}

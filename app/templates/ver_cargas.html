@@ -1,42 +1,42 @@
 {% extends 'base.html' %}
 
-{% block title %}Ver Cargas{% endblock %}
+{% block title %}Ver Cargas - CADEX{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-12">
-        <div class="card mt-5 shadow">
-            <div class="card-header text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'bienvenida' %}?periodo={{ request.session.periodo_actual|default:'enero_2026' }}" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-arrow-left"></i> Regresar
-                    </a>
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header text-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-file-upload fa-lg"></i>
                     <h3 class="card-title mb-0">Tabla de Carga y Descarga</h3>
-                    <div style="width: 100px;"></div> <!-- Espaciador para centrar el título -->
                 </div>
+                <a href="{% url 'bienvenida' %}?periodo={{ request.session.periodo_actual|default:'enero_2026' }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-arrow-left"></i> Regresar
+                </a>
             </div>
             <div class="card-body">
-                <!-- Add search bar -->
-                <div class="row mb-4">
-                    <div class="col-md-6 offset-md-6">
+                <div class="row mb-3">
+                    <div class="col-md-6">
                         <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
                             <input type="text" id="searchInput" class="form-control"
                                 placeholder="Buscar por Empleado, Expediente o Junta...">
                         </div>
                     </div>
                 </div>
 
-                <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover">
-                        <thead>
+                {% if cargas %}
+                <div class="table-responsive" style="max-height: 530px; overflow-y: auto;">
+                    <table class="table table-bordered table-striped table-hover table-sm" id="cargasTable">
+                        <thead style="position: sticky; top: 0; background-color: #1a472a; z-index: 1;">
                             <tr>
-                                <th>ID</th>
-                                <th>ID Expediente</th>
-                                <th>Empleado</th>
-                                <th>Expediente</th>
-                                <th>Junta</th>
-                                <th>Fecha</th>
-                                <th>Entregado a</th>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 20%;">Empleado</th>
+                                <th style="width: 15%;">Expediente</th>
+                                <th style="width: 20%;">Junta</th>
+                                <th style="width: 15%;">Fecha</th>
+                                <th style="width: 25%;">Entregado a</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -53,26 +53,37 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <h5 class="text-muted">No hay registros de carga</h5>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    document.getElementById('searchInput').addEventListener('keyup', function () {
-        let searchText = this.value.toLowerCase();
-        let rows = document.getElementsByClassName('carga-row');
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            searchInput.addEventListener('keyup', function() {
+                let searchText = this.value.toLowerCase();
+                let rows = document.getElementsByClassName('carga-row');
 
-        for (let row of rows) {
-            let empleado = row.cells[1].textContent.toLowerCase();
-            let expediente = row.cells[2].textContent.toLowerCase();
-            let junta = row.cells[3].textContent.toLowerCase();
+                for (let row of rows) {
+                    let empleado = row.cells[1].textContent.toLowerCase();
+                    let expediente = row.cells[2].textContent.toLowerCase();
+                    let junta = row.cells[3].textContent.toLowerCase();
 
-            if (empleado.includes(searchText) || expediente.includes(searchText) || junta.includes(searchText)) {
-                row.style.display = '';
-            } else {
-                row.style.display = 'none';
-            }
+                    if (empleado.includes(searchText) || expediente.includes(searchText) || junta.includes(searchText)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
         }
     });
 </script>

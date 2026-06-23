@@ -1,217 +1,356 @@
 ﻿{% extends 'base.html' %}
 
-{% block title %}Agregar Expediente{% endblock %}
+{% block title %}Agregar Expediente - CADEX{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-12">
-        <div class="card mt-2 shadow">
-            <div class="card-header text-white">
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-outline-light btn-sm">
-                        <i class="fas fa-arrow-left"></i> Regresar
-                    </a>
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header text-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-plus-circle fa-lg"></i>
                     <h3 class="card-title mb-0">Agregar Expediente</h3>
-                    <div style="width: 100px;"></div>
                 </div>
+                <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-sm btn-light">
+                    <i class="fas fa-arrow-left"></i> Regresar
+                </a>
             </div>
             <div class="card-body">
-                <form method="post" action="{% url 'agregar_expediente' %}?periodo={{ periodo_actual }}">
+                <form method="post" action="{% url 'agregar_expediente' %}?periodo={{ periodo_actual }}" id="formAgregar">
                     {% csrf_token %}
 
                     <!-- DATOS GENERALES -->
-                    <h5 class="mb-3 text-primary"><i class="fas fa-file"></i> Datos Generales</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label for="letra">Letra:</label>
-                            <input type="text" class="form-control" id="letra" name="letra" maxlength="1" placeholder="A-Z">
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-file-alt text-primary"></i> Datos Generales
+                            </h5>
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="exp">Expediente:</label>
-                            <input type="text" class="form-control" id="exp" name="exp" placeholder="ej: 01/01/01 JE2">
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="anio">Año:</label>
-                            <input type="number" class="form-control" id="anio" name="anio" min="1900" max="2100" placeholder="ej: 2024">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-3">
+                                    <label for="letra" class="form-label">Letra</label>
+                                    <input type="text" class="form-control form-control-sm" id="letra" name="letra" maxlength="1" placeholder="A-Z">
+                                </div>
+                                <div class="col-md-5 mb-3">
+                                    <label for="exp" class="form-label">Expediente</label>
+                                    <input type="text" class="form-control form-control-sm" id="exp" name="exp" placeholder="ej: 01/01/01 JE2">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label for="anio" class="form-label">Año</label>
+                                    <input type="number" class="form-control form-control-sm" id="anio" name="anio" min="1900" max="2100" placeholder="ej: 2024">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="actor" class="form-label">Actor</label>
+                                    <input type="text" class="form-control form-control-sm" id="actor" name="actor" placeholder="Nombre del actor">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="demandado" class="form-label">Demandado</label>
+                                    <input type="text" class="form-control form-control-sm" id="demandado" name="demandado" placeholder="Nombre del demandado">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
+                                    <label for="area_en_la_que_se_encuentra" class="form-label">Área donde se encuentra</label>
+                                    <input type="text" class="form-control form-control-sm" id="area_en_la_que_se_encuentra" name="area_en_la_que_se_encuentra" placeholder="ej: Junta Local #1">
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="actor">Actor:</label>
-                            <input type="text" class="form-control" id="actor" name="actor" placeholder="Nombre del actor">
+
+                    <!-- ESTADO DEL EXPEDIENTE -->
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-info-circle text-warning"></i> Estado del Expediente
+                            </h5>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="demandado">Demandado:</label>
-                            <input type="text" class="form-control" id="demandado" name="demandado" placeholder="Nombre del demandado">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="acuerdo_pendiente_de_caducidad" name="acuerdo_pendiente_de_caducidad" value="1"><label class="form-check-label" for="acuerdo_pendiente_de_caducidad">Acuerdo pte. caducidad</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="caducidad" name="caducidad" value="1"><label class="form-check-label" for="caducidad">Caducidad</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="acuerdo_pendiente_prescripcion" name="acuerdo_pendiente_prescripcion" value="1"><label class="form-check-label" for="acuerdo_pendiente_prescripcion">Acuerdo pte. presc.</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="prescripcion" name="prescripcion" value="1"><label class="form-check-label" for="prescripcion">Prescripción</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_en_tramite" name="convenio_en_tramite" value="1"><label class="form-check-label" for="convenio_en_tramite">Convenio en trámite</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="desistimiento" name="desistimiento" value="1"><label class="form-check-label" for="desistimiento">Desistimiento</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="por_no_interpuesta" name="por_no_interpuesta" value="1"><label class="form-check-label" for="por_no_interpuesta">Por no interpuesta</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_cumplimiento_laudo" name="convenio_cumplimiento_laudo" value="1"><label class="form-check-label" for="convenio_cumplimiento_laudo">Convenio cumpl. laudo</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="archivado_por_recision" name="archivado_por_recision" value="1"><label class="form-check-label" for="archivado_por_recision">Archivado por rescisión</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="descentralizado" name="descentralizado" value="1"><label class="form-check-label" for="descentralizado">Descentralizado</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="incompetencia" name="incompetencia" value="1"><label class="form-check-label" for="incompetencia">Incompetencia</label></div></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="area_en_la_que_se_encuentra">Área donde se encuentra:</label>
-                            <input type="text" class="form-control" id="area_en_la_que_se_encuentra" name="area_en_la_que_se_encuentra" placeholder="ej: Junta Local #1">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="acuerdo_pendiente_de_caducidad" name="acuerdo_pendiente_de_caducidad" value="1"><label class="form-check-label" for="acuerdo_pendiente_de_caducidad">Acuerdo pte. caducidad</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="caducidad" name="caducidad" value="1"><label class="form-check-label" for="caducidad">Caducidad</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="acuerdo_pendiente_prescripcion" name="acuerdo_pendiente_prescripcion" value="1"><label class="form-check-label" for="acuerdo_pendiente_prescripcion">Acuerdo pte. presc.</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="prescripcion" name="prescripcion" value="1"><label class="form-check-label" for="prescripcion">Prescripción</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_en_tramite" name="convenio_en_tramite" value="1"><label class="form-check-label" for="convenio_en_tramite">Convenio en trámite</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="desistimiento" name="desistimiento" value="1"><label class="form-check-label" for="desistimiento">Desistimiento</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="por_no_interpuesta" name="por_no_interpuesta" value="1"><label class="form-check-label" for="por_no_interpuesta">Por no interpuesta</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_cumplimiento_laudo" name="convenio_cumplimiento_laudo" value="1"><label class="form-check-label" for="convenio_cumplimiento_laudo">Convenio cumpl. laudo</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="archivado_por_recision" name="archivado_por_recision" value="1"><label class="form-check-label" for="archivado_por_recision">Archivado por rescisión</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="descentralizado" name="descentralizado" value="1"><label class="form-check-label" for="descentralizado">Descentralizado</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="incompetencia" name="incompetencia" value="1"><label class="form-check-label" for="incompetencia">Incompetencia</label></div></div>
                     </div>
 
                     <!-- EMPLAZAMIENTO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-envelope"></i> Emplazamiento</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="emplazamiento" name="emplazamiento" value="1"><label class="form-check-label" for="emplazamiento">Emplazamiento</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_actor_emplazamiento" name="falta_not_actor_emplazamiento" value="1"><label class="form-check-label" for="falta_not_actor_emplazamiento">Falta notificación actor</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_emplazar" name="falta_emplazar" value="1"><label class="form-check-label" for="falta_emplazar">Falta emplazar</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="no_han_senalado" name="no_han_senalado" value="1"><label class="form-check-label" for="no_han_senalado">No han señalado</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="terminio" name="terminio" value="1"><label class="form-check-label" for="terminio">Terminio</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="imposibilidad_emplazamiento" name="imposibilidad_emplazamiento" value="1"><label class="form-check-label" for="imposibilidad_emplazamiento">Imposibilidad emplazamiento</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="exhorto" name="exhorto" value="1"><label class="form-check-label" for="exhorto">Exhorto</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-envelope text-info"></i> Emplazamiento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="emplazamiento" name="emplazamiento" value="1"><label class="form-check-label" for="emplazamiento">Emplazamiento</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_actor_emplazamiento" name="falta_not_actor_emplazamiento" value="1"><label class="form-check-label" for="falta_not_actor_emplazamiento">Falta notificación actor</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_emplazar" name="falta_emplazar" value="1"><label class="form-check-label" for="falta_emplazar">Falta emplazar</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="no_han_senalado" name="no_han_senalado" value="1"><label class="form-check-label" for="no_han_senalado">No han señalado</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="terminio" name="terminio" value="1"><label class="form-check-label" for="terminio">Terminio</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="imposibilidad_emplazamiento" name="imposibilidad_emplazamiento" value="1"><label class="form-check-label" for="imposibilidad_emplazamiento">Imposibilidad emplazamiento</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="exhorto" name="exhorto" value="1"><label class="form-check-label" for="exhorto">Exhorto</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PROCEDIMIENTO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-gavel"></i> Procedimiento</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="procedimiento" name="procedimiento" value="1"><label class="form-check-label" for="procedimiento">Procedimiento</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="cita_conciliacion" name="cita_conciliacion" value="1"><label class="form-check-label" for="cita_conciliacion">Cita conciliación</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="sin_cita_conciliacion" name="sin_cita_conciliacion" value="1"><label class="form-check-label" for="sin_cita_conciliacion">Sin cita conciliación</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_p_cumpl" name="convenio_p_cumpl" value="1"><label class="form-check-label" for="convenio_p_cumpl">Convenio para cumpl.</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="cde" name="cde" value="1"><label class="form-check-label" for="cde">C.D.E.</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="tercero_audiencia" name="tercero_audiencia" value="1"><label class="form-check-label" for="tercero_audiencia">Tercero en audiencia</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="oap" name="oap" value="1"><label class="form-check-label" for="oap">O.A.P.</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-gavel text-danger"></i> Procedimiento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="procedimiento" name="procedimiento" value="1"><label class="form-check-label" for="procedimiento">Procedimiento</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="cita_conciliacion" name="cita_conciliacion" value="1"><label class="form-check-label" for="cita_conciliacion">Cita conciliación</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="sin_cita_conciliacion" name="sin_cita_conciliacion" value="1"><label class="form-check-label" for="sin_cita_conciliacion">Sin cita conciliación</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="convenio_p_cumpl" name="convenio_p_cumpl" value="1"><label class="form-check-label" for="convenio_p_cumpl">Convenio para cumpl.</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="cde" name="cde" value="1"><label class="form-check-label" for="cde">C.D.E.</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="tercero_audiencia" name="tercero_audiencia" value="1"><label class="form-check-label" for="tercero_audiencia">Tercero en audiencia</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="oap" name="oap" value="1"><label class="form-check-label" for="oap">O.A.P.</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PRUEBAS -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-check-circle"></i> Pruebas</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="pruebas" name="pruebas" value="1"><label class="form-check-label" for="pruebas">Pruebas</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="reserva" name="reserva" value="1"><label class="form-check-label" for="reserva">Reserva</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="pendiente_revision" name="pendiente_revision" value="1"><label class="form-check-label" for="pendiente_revision">Pendiente revisión</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="notificadas_ambas" name="notificadas_ambas" value="1"><label class="form-check-label" for="notificadas_ambas">Notificadas ambas</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-check-circle text-success"></i> Pruebas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="pruebas" name="pruebas" value="1"><label class="form-check-label" for="pruebas">Pruebas</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="reserva" name="reserva" value="1"><label class="form-check-label" for="reserva">Reserva</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="pendiente_revision" name="pendiente_revision" value="1"><label class="form-check-label" for="pendiente_revision">Pendiente revisión</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="notificadas_ambas" name="notificadas_ambas" value="1"><label class="form-check-label" for="notificadas_ambas">Notificadas ambas</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- DESAHOGO DE PRUEBAS -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-clipboard-list"></i> Desahogo de Pruebas</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="desahogo_pruebas" name="desahogo_pruebas" value="1"><label class="form-check-label" for="desahogo_pruebas">Desahogo de pruebas</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-clipboard-list text-secondary"></i> Desahogo de Pruebas
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="desahogo_pruebas" name="desahogo_pruebas" value="1"><label class="form-check-label" for="desahogo_pruebas">Desahogo de pruebas</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- TESTIMONIAL -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-microphone"></i> Testimonial</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_citar_test" name="falta_citar_test" value="1"><label class="form-check-label" for="falta_citar_test">Falta citar test.</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="fata_not_partes" name="fata_not_partes" value="1"><label class="form-check-label" for="fata_not_partes">Falta notif. partes</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="fuerza_publica_testimonial" name="fuerza_publica_testimonial" value="1"><label class="form-check-label" for="fuerza_publica_testimonial">Fuerza pública</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="justificante" name="justificante" value="1"><label class="form-check-label" for="justificante">Justificante</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-microphone text-info"></i> Testimonial
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_citar_test" name="falta_citar_test" value="1"><label class="form-check-label" for="falta_citar_test">Falta citar test.</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="fata_not_partes" name="fata_not_partes" value="1"><label class="form-check-label" for="fata_not_partes">Falta notif. partes</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="fuerza_publica_testimonial" name="fuerza_publica_testimonial" value="1"><label class="form-check-label" for="fuerza_publica_testimonial">Fuerza pública</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="justificante" name="justificante" value="1"><label class="form-check-label" for="justificante">Justificante</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- PERICIAL -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-vial"></i> Pericial</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="actora" name="actora" value="1"><label class="form-check-label" for="actora">Actor/a</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="demandada" name="demandada" value="1"><label class="form-check-label" for="demandada">Demandado/a</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="tercero" name="tercero" value="1"><label class="form-check-label" for="tercero">Tercero</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_designar_per" name="falta_designar_per" value="1"><label class="form-check-label" for="falta_designar_per">Falta designar perit.</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-vial text-primary"></i> Pericial
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="actora" name="actora" value="1"><label class="form-check-label" for="actora">Actor/a</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="demandada" name="demandada" value="1"><label class="form-check-label" for="demandada">Demandado/a</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="tercero" name="tercero" value="1"><label class="form-check-label" for="tercero">Tercero</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_designar_per" name="falta_designar_per" value="1"><label class="form-check-label" for="falta_designar_per">Falta designar perit.</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- CONFESIÓN -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-handshake"></i> Confesión</h5>
-                    <div class="row">
-                        <div class="col-md-6 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_conf" name="falta_not_partes_conf" value="1"><label class="form-check-label" for="falta_not_partes_conf">Falta notif. partes</label></div></div>
-                        <div class="col-md-6 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_ir_domicilio" name="falta_ir_domicilio" value="1"><label class="form-check-label" for="falta_ir_domicilio">Falta ir domicilio</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-handshake text-warning"></i> Confesión
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_conf" name="falta_not_partes_conf" value="1"><label class="form-check-label" for="falta_not_partes_conf">Falta notif. partes</label></div></div>
+                                <div class="col-md-6 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_ir_domicilio" name="falta_ir_domicilio" value="1"><label class="form-check-label" for="falta_ir_domicilio">Falta ir domicilio</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- INFORMACIÓN -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-info-circle"></i> Información</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="f_hacer_oficio" name="f_hacer_oficio" value="1"><label class="form-check-label" for="f_hacer_oficio">Falta hacer oficio</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_girar_oficio" name="falta_girar_oficio" value="1"><label class="form-check-label" for="falta_girar_oficio">Falta girar oficio</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="sin_respuesta" name="sin_respuesta" value="1"><label class="form-check-label" for="sin_respuesta">Sin respuesta</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-info-circle text-info"></i> Información
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="f_hacer_oficio" name="f_hacer_oficio" value="1"><label class="form-check-label" for="f_hacer_oficio">Falta hacer oficio</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_girar_oficio" name="falta_girar_oficio" value="1"><label class="form-check-label" for="falta_girar_oficio">Falta girar oficio</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="sin_respuesta" name="sin_respuesta" value="1"><label class="form-check-label" for="sin_respuesta">Sin respuesta</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- OTROS -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-ellipsis-h"></i> Otros</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_inspeccion" name="falta_inspeccion" value="1"><label class="form-check-label" for="falta_inspeccion">Falta inspección</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_cotejo" name="falta_cotejo" value="1"><label class="form-check-label" for="falta_cotejo">Falta cotejo</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="inc_nul_not" name="inc_nul_not" value="1"><label class="form-check-label" for="inc_nul_not">Inc./Nul. notif.</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-ellipsis-h text-muted"></i> Otros
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_inspeccion" name="falta_inspeccion" value="1"><label class="form-check-label" for="falta_inspeccion">Falta inspección</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_cotejo" name="falta_cotejo" value="1"><label class="form-check-label" for="falta_cotejo">Falta cotejo</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="inc_nul_not" name="inc_nul_not" value="1"><label class="form-check-label" for="inc_nul_not">Inc./Nul. notif.</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- CIERRE -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-door-closed"></i> Cierre</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="cierre" name="cierre" value="1"><label class="form-check-label" for="cierre">Cierre</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="alegatos" name="alegatos" value="1"><label class="form-check-label" for="alegatos">Alegatos</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="prueba_pendiente" name="prueba_pendiente" value="1"><label class="form-check-label" for="prueba_pendiente">Prueba pendiente</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="cierre_cierre" name="cierre_cierre" value="1"><label class="form-check-label" for="cierre_cierre">Cierre/Depuración</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="pendiente_de_laudo" name="pendiente_de_laudo" value="1"><label class="form-check-label" for="pendiente_de_laudo">Pendiente de laudo</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-door-closed text-secondary"></i> Cierre
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="cierre" name="cierre" value="1"><label class="form-check-label" for="cierre">Cierre</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="alegatos" name="alegatos" value="1"><label class="form-check-label" for="alegatos">Alegatos</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="prueba_pendiente" name="prueba_pendiente" value="1"><label class="form-check-label" for="prueba_pendiente">Prueba pendiente</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="cierre_cierre" name="cierre_cierre" value="1"><label class="form-check-label" for="cierre_cierre">Cierre/Depuración</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="pendiente_de_laudo" name="pendiente_de_laudo" value="1"><label class="form-check-label" for="pendiente_de_laudo">Pendiente de laudo</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- DICTADO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-gavel"></i> Dictado</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="dictado" name="dictado" value="1"><label class="form-check-label" for="dictado">Dictado</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_dictados" name="falta_not_partes_dictados" value="1"><label class="form-check-label" for="falta_not_partes_dictados">Falta notif. partes</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="condenatorio" name="condenatorio" value="1"><label class="form-check-label" for="condenatorio">Condenatorio</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="absolutorio" name="absolutorio" value="1"><label class="form-check-label" for="absolutorio">Absolutorio</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="en_colegiado" name="en_colegiado" value="1"><label class="form-check-label" for="en_colegiado">En colegiado</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-gavel text-danger"></i> Dictado
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="dictado" name="dictado" value="1"><label class="form-check-label" for="dictado">Dictado</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_dictados" name="falta_not_partes_dictados" value="1"><label class="form-check-label" for="falta_not_partes_dictados">Falta notif. partes</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="condenatorio" name="condenatorio" value="1"><label class="form-check-label" for="condenatorio">Condenatorio</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="absolutorio" name="absolutorio" value="1"><label class="form-check-label" for="absolutorio">Absolutorio</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="en_colegiado" name="en_colegiado" value="1"><label class="form-check-label" for="en_colegiado">En colegiado</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- EJECUCIÓN -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-cogs"></i> Ejecución</h5>
-                    <div class="row">
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="ejecucion" name="ejecucion" value="1"><label class="form-check-label" for="ejecucion">Ejecución</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="auto_ejecucion" name="auto_ejecucion" value="1"><label class="form-check-label" for="auto_ejecucion">Auto ejecución</label></div></div>
-                        <div class="col-md-4 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_actor_ejecucion" name="falta_not_actor_ejecucion" value="1"><label class="form-check-label" for="falta_not_actor_ejecucion">Falta notif. actor</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-cogs text-warning"></i> Ejecución
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="ejecucion" name="ejecucion" value="1"><label class="form-check-label" for="ejecucion">Ejecución</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="auto_ejecucion" name="auto_ejecucion" value="1"><label class="form-check-label" for="auto_ejecucion">Auto ejecución</label></div></div>
+                                <div class="col-md-4 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_actor_ejecucion" name="falta_not_actor_ejecucion" value="1"><label class="form-check-label" for="falta_not_actor_ejecucion">Falta notif. actor</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- REQUERIMIENTO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-file-alt"></i> Requerimiento</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="requerimiento" name="requerimiento" value="1"><label class="form-check-label" for="requerimiento">Requerimiento</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="fuerza_publica_requerimiento" name="fuerza_publica_requerimiento" value="1"><label class="form-check-label" for="fuerza_publica_requerimiento">Fuerza pública</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="imposibilidad_requerimiento" name="imposibilidad_requerimiento" value="1"><label class="form-check-label" for="imposibilidad_requerimiento">Imposibilidad</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="inembargable" name="inembargable" value="1"><label class="form-check-label" for="inembargable">Inembargable</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="cuentas_embargadas" name="cuentas_embargadas" value="1"><label class="form-check-label" for="cuentas_embargadas">Cuentas embargadas</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="embargo_de_bien_inmueble_yo_muebles" name="embargo_de_bien_inmueble_yo_muebles" value="1"><label class="form-check-label" for="embargo_de_bien_inmueble_yo_muebles">Embargo de bienes</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="revision" name="revision" value="1"><label class="form-check-label" for="revision">Revisión</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_reso_rev" name="falta_reso_rev" value="1"><label class="form-check-label" for="falta_reso_rev">Falta resolución rev.</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_requerimiento" name="falta_not_partes_requerimiento" value="1"><label class="form-check-label" for="falta_not_partes_requerimiento">Falta notif. partes</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="remate" name="remate" value="1"><label class="form-check-label" for="remate">Remate</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-file-alt text-primary"></i> Requerimiento
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="requerimiento" name="requerimiento" value="1"><label class="form-check-label" for="requerimiento">Requerimiento</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="fuerza_publica_requerimiento" name="fuerza_publica_requerimiento" value="1"><label class="form-check-label" for="fuerza_publica_requerimiento">Fuerza pública</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="imposibilidad_requerimiento" name="imposibilidad_requerimiento" value="1"><label class="form-check-label" for="imposibilidad_requerimiento">Imposibilidad</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="inembargable" name="inembargable" value="1"><label class="form-check-label" for="inembargable">Inembargable</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="cuentas_embargadas" name="cuentas_embargadas" value="1"><label class="form-check-label" for="cuentas_embargadas">Cuentas embargadas</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="embargo_de_bien_inmueble_yo_muebles" name="embargo_de_bien_inmueble_yo_muebles" value="1"><label class="form-check-label" for="embargo_de_bien_inmueble_yo_muebles">Embargo de bienes</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="revision" name="revision" value="1"><label class="form-check-label" for="revision">Revisión</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_reso_rev" name="falta_reso_rev" value="1"><label class="form-check-label" for="falta_reso_rev">Falta resolución rev.</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="falta_not_partes_requerimiento" name="falta_not_partes_requerimiento" value="1"><label class="form-check-label" for="falta_not_partes_requerimiento">Falta notif. partes</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="remate" name="remate" value="1"><label class="form-check-label" for="remate">Remate</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- AMPARO INDIRECTO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-shield-alt"></i> Amparo Indirecto</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="indirecto" name="indirecto" value="1"><label class="form-check-label" for="indirecto">Amparo indirecto</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="emplazar" name="emplazar" value="1"><label class="form-check-label" for="emplazar">Emplazar</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="desahogo_pruebas_indirecto" name="desahogo_pruebas_indirecto" value="1"><label class="form-check-label" for="desahogo_pruebas_indirecto">Desahogo pruebas</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="dictar_laudo" name="dictar_laudo" value="1"><label class="form-check-label" for="dictar_laudo">Dictar laudo</label></div></div>
-                        <div class="col-md-3 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="ejecucion_indirecto" name="ejecucion_indirecto" value="1"><label class="form-check-label" for="ejecucion_indirecto">Ejecución</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-shield-alt text-success"></i> Amparo Indirecto
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="indirecto" name="indirecto" value="1"><label class="form-check-label" for="indirecto">Amparo indirecto</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="emplazar" name="emplazar" value="1"><label class="form-check-label" for="emplazar">Emplazar</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="desahogo_pruebas_indirecto" name="desahogo_pruebas_indirecto" value="1"><label class="form-check-label" for="desahogo_pruebas_indirecto">Desahogo pruebas</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="dictar_laudo" name="dictar_laudo" value="1"><label class="form-check-label" for="dictar_laudo">Dictar laudo</label></div></div>
+                                <div class="col-md-3 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="ejecucion_indirecto" name="ejecucion_indirecto" value="1"><label class="form-check-label" for="ejecucion_indirecto">Ejecución</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- AMPARO DIRECTO -->
-                    <h5 class="mt-4 mb-3 text-primary"><i class="fas fa-shield-alt"></i> Amparo Directo</h5>
-                    <div class="row">
-                        <div class="col-md-6 mb-3"><div class="form-check"><input type="checkbox" class="form-check-input" id="directo" name="directo" value="1"><label class="form-check-label" for="directo">Amparo directo</label></div></div>
+                    <div class="card mb-4 border-0 shadow-sm">
+                        <div class="card-header bg-light border-0">
+                            <h5 class="section-title mb-0">
+                                <i class="fas fa-shield-alt text-danger"></i> Amparo Directo
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-2"><div class="form-check"><input type="checkbox" class="form-check-input" id="directo" name="directo" value="1"><label class="form-check-label" for="directo">Amparo directo</label></div></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- BOTONES DE ACCIÓN -->
-                    <div class="text-center mt-5">
-                        <button type="submit" class="btn btn-agregar btn-lg">
+                    <!-- BOTONES -->
+                    <div class="text-center mt-4 mb-5">
+                        <button type="submit" class="btn btn-agregar btn-lg px-5" id="btnGuardar">
                             <i class="fas fa-save"></i> Guardar Expediente
                         </button>
-                        <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-secondary btn-lg">
+                        <a href="{% url 'bienvenida' %}?periodo={{ periodo_actual }}" class="btn btn-secondary btn-lg px-5">
                             <i class="fas fa-times"></i> Cancelar
                         </a>
                     </div>
@@ -220,4 +359,14 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('formAgregar').addEventListener('submit', function(e) {
+        const btn = document.getElementById('btnGuardar');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="spinner-border spinner-border-sm mr-2" role="status"></div> Guardando...';
+    });
+</script>
 {% endblock %}
